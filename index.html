@@ -3,32 +3,96 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Маникюр PWA</title>
+<title>Маникюр PWA — эффекты + курица</title>
 <meta name="theme-color" content="#0f1220">
 <link rel="manifest" href="manifest.json">
 <style>
-  body{margin:0;font-family:system-ui;background:#0f1220;color:#eef2fc}
-  .wrap{max-width:1000px;margin:auto;padding:12px;display:grid;gap:12px}
-  .card{background:#1b2346;border-radius:14px;padding:14px}
+  :root{--bg:#0f1220;--card:#1b2346;--muted:#aab6e8;--accent:#7ae0ff}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,Inter,Arial;background:var(--bg);color:#eef2fc}
+  .wrap{max-width:1100px;margin:auto;padding:12px;display:grid;gap:12px}
+  .card{background:var(--card);border-radius:14px;padding:14px}
   .video-wrap{position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3}
+  /* три слоя */
   video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  #videoCanvas{z-index:1}
+  #effectsCanvas{z-index:2;pointer-events:none}
+  #chickenCanvas{z-index:3;pointer-events:none}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
   .controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
   .btn{padding:10px 14px;border:none;border-radius:12px;font-weight:700;cursor:pointer;background:#4da3ff;color:#0f1220}
+  .btn.alt{background:transparent;border:2px solid var(--accent);color:var(--accent)}
   .btn.warn{background:#ff6a6a;color:#fff}
+  label{font-size:.9rem;color:#d6defc}
+  select,input[type=color],input[type=file],input[type=range]{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:#eef2fc}
+  .templates{display:grid;grid-template-columns:repeat(2,minmax(120px,1fr));gap:8px}
+  .tpl{background:#0a1024;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:8px;text-align:center;cursor:pointer}
+  .tpl.active{outline:2px solid var(--accent)}
+  .note{font-size:.9rem;color:var(--muted)}
+  .downloads a{color:#bfe6ff}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="card">
-    <h1>Маникюр: PWA</h1>
+    <h1>Маникюр: ногти + эффекты + курица 🐔</h1>
+
     <div class="video-wrap">
       <video id="video" playsinline muted></video>
-      <canvas id="canvas"></canvas>
+      <!-- слой камеры + ногти -->
+      <canvas id="videoCanvas"></canvas>
+      <!-- слой эффектов -->
+      <canvas id="effectsCanvas"></canvas>
+      <!-- слой курицы -->
+      <canvas id="chickenCanvas"></canvas>
     </div>
 
-    <div>
+    <!-- Панель управления -->
+    <div class="row" style="margin-top:8px">
       <label><input type="checkbox" id="mirrorFront"> Зеркалить фронтальную</label>
-      <button class="btn" id="switchCam">Фронт/Задняя</button>
+      <button class="btn alt" id="switchCam">Фронт/Задняя</button>
+      <span class="note" id="camNote">user</span>
+
+      <div class="row" style="margin-left:auto; gap:8px">
+        <select id="effectSelect" title="Эффекты поверх">
+          <option value="none">Эффект: выкл</option>
+          <option value="fire">🔥 Огонь</option>
+          <option value="lightning">⚡ Молнии</option>
+          <option value="snow">❄️ Снег</option>
+          <option value="hearts">❤️ Сердечки</option>
+        </select>
+
+        <label style="display:flex;align-items:center;gap:6px">
+          <input type="checkbox" id="chickenToggle"> Показать курицу 🐔
+        </label>
+        <label style="display:flex;align-items:center;gap:6px">
+          Спрайт: <input type="file" id="chickenSprite" accept="image/*">
+        </label>
+        <label style="display:flex;align-items:center;gap:6px">
+          Скорость: <input type="range" id="chickenSpeed" min="0" max="2" step="0.1" value="1">
+        </label>
+      </div>
+    </div>
+
+    <!-- Режим покрытия ногтей -->
+    <div class="row" style="margin-top:10px">
+      <label><input type="radio" name="mode" value="color" checked> Цвет</label>
+      <label><input type="radio" name="mode" value="template"> Шаблон</label>
+      <label><input type="radio" name="mode" value="image"> Картинка</label>
+      <div id="colorField" class="row" style="gap:6px;margin-left:10px">
+        <span>Цвет:</span> <input type="color" id="fillColor" value="#ff7ae0">
+      </div>
+      <div id="imgField" class="row" style="gap:6px;display:none;margin-left:10px">
+        <span>Загрузить:</span> <input type="file" id="imgInput" accept="image/*">
+      </div>
+      <div id="tplField" class="row" style="gap:6px;display:none;margin-left:10px">
+        <div class="templates" id="tplList">
+          <div class="tpl active" data-tpl="Hearts">❤️ Hearts</div>
+          <div class="tpl" data-tpl="Stars">⭐ Stars</div>
+          <div class="tpl" data-tpl="Glitter">✨ Glitter</div>
+          <div class="tpl" data-tpl="Rainbow">🌈 Rainbow</div>
+        </div>
+      </div>
     </div>
 
     <div class="controls">
@@ -38,70 +102,349 @@
       <button class="btn warn" id="reloadApp" style="display:none">🔄 Обновить</button>
     </div>
     <div id="downloads"></div>
+    <div class="note">Поделиться использует системное меню (если доступно), иначе — скачивание файла.</div>
   </div>
 </div>
 
-<!-- Mediapipe -->
+<!-- MediaPipe -->
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
 
 <script>
-const video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
-const switchCamBtn=document.getElementById('switchCam'),mirrorFront=document.getElementById('mirrorFront');
-const shotBtn=document.getElementById('shot'),shareBtn=document.getElementById('share'),downloads=document.getElementById('downloads');
-const installBtn=document.getElementById('installBtn'),reloadBtn=document.getElementById('reloadApp');
+/* ========= DOM ========= */
+const video = document.getElementById('video');
+const vcan = document.getElementById('videoCanvas');
+const ecan = document.getElementById('effectsCanvas');
+const ccan = document.getElementById('chickenCanvas');
+const vctx = vcan.getContext('2d');
+const ectx = ecan.getContext('2d');
+const cctx = ccan.getContext('2d');
 
-let facingMode='user',stream=null,isMirror=false,lastShot=null;
+const switchCamBtn = document.getElementById('switchCam');
+const mirrorFront = document.getElementById('mirrorFront');
+const camNote = document.getElementById('camNote');
+
+const modeRadios = document.querySelectorAll('input[name="mode"]');
+const colorField = document.getElementById('colorField');
+const imgField   = document.getElementById('imgField');
+const tplField   = document.getElementById('tplField');
+const fillColor  = document.getElementById('fillColor');
+const imgInput   = document.getElementById('imgInput');
+const tplList    = document.getElementById('tplList');
+
+const effectSelect = document.getElementById('effectSelect');
+
+const chickenToggle = document.getElementById('chickenToggle');
+const chickenSpriteInput = document.getElementById('chickenSprite');
+const chickenSpeed = document.getElementById('chickenSpeed');
+
+const shotBtn = document.getElementById('shot');
+const shareBtn = document.getElementById('share');
+const installBtn = document.getElementById('installBtn');
+const reloadBtn = document.getElementById('reloadApp');
+const downloads = document.getElementById('downloads');
+
+/* ========= Camera ========= */
+let facingMode='user', stream=null, isMirror=false;
 mirrorFront.addEventListener('change',()=>isMirror=mirrorFront.checked);
-switchCamBtn.addEventListener('click',()=>{facingMode=facingMode==='user'?'environment':'user';startCamera();});
+switchCamBtn.addEventListener('click',()=>{facingMode=facingMode==='user'?'environment':'user';camNote.textContent=facingMode;startCamera();});
+function resizeAll(){
+  if(!video.videoWidth) return;
+  const w = video.videoWidth, h = video.videoHeight;
+  [vcan, ecan, ccan].forEach(c => { c.width=w; c.height=h; });
+}
+window.addEventListener('resize', resizeAll);
+video.addEventListener('loadedmetadata', resizeAll);
 
 async function startCamera(){
-  if(stream)stream.getTracks().forEach(t=>t.stop());
-  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode},audio:false});
-  video.srcObject=stream;await video.play();
-  canvas.width=video.videoWidth;canvas.height=video.videoHeight;
-  requestAnimationFrame(loop);
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  stream = await navigator.mediaDevices.getUserMedia({video:{facingMode}, audio:false});
+  video.srcObject = stream; await video.play(); resizeAll();
+  requestAnimationFrame(mainLoop);
 }
-video.addEventListener('loadedmetadata',()=>{canvas.width=video.videoWidth;canvas.height=video.videoHeight});
-
-/* Mediapipe */
-const hands=new Hands({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}`});
-hands.setOptions({maxNumHands:1,modelComplexity:1,minDetectionConfidence:0.7,minTrackingConfidence:0.6});
-hands.onResults(onResults);
-const FINGER_TIPS=[4,8,12,16,20];
-function getNailPolygon(lm,i){const tip=lm[i],dip=lm[i-1],pip=lm[i-2];if(!tip||!dip||!pip)return null;const tx=tip.x*canvas.width,ty=tip.y*canvas.height,dx=dip.x*canvas.width,dy=dip.y*canvas.height,px=pip.x*canvas.width,py=pip.y*canvas.height;const vx=tx-px,vy=ty-py,len=Math.hypot(vx,vy)||1;const nx=-vy/len*10,ny=vx/len*10;return[{x:dx+nx,y:dy+ny},{x:dx-nx,y:dy-ny},{x:tx-nx,y:ty-ny},{x:tx+nx,y:ty+ny}];}
-function pathFromPoly(p){if(!p)return null;const path=new Path2D();path.moveTo(p[0].x,p[0].y);for(let j=1;j<p.length;j++)path.lineTo(p[j].x,p[j].y);path.closePath();return path;}
-function fillNail(poly){const path=pathFromPoly(poly);if(!path)return;ctx.save();ctx.clip(path);ctx.fillStyle="rgba(255,100,200,0.6)";ctx.fill(path);ctx.restore();ctx.strokeStyle='white';ctx.stroke(path);}
-function onResults(res){ctx.clearRect(0,0,canvas.width,canvas.height);if(isMirror&&facingMode==='user'){ctx.save();ctx.scale(-1,1);ctx.drawImage(res.image,-canvas.width,0,canvas.width,canvas.height);ctx.restore();}else{ctx.drawImage(res.image,0,0,canvas.width,canvas.height);}if(res.multiHandLandmarks&&res.multiHandLandmarks.length){let lm=res.multiHandLandmarks[0];if(isMirror&&facingMode==='user'){lm=lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));}FINGER_TIPS.forEach(i=>{const poly=getNailPolygon(lm,i);if(poly)fillNail(poly);});}}
-async function loop(){if(video.readyState>=2){await hands.send({image:video});}requestAnimationFrame(loop);}
 startCamera();
 
-/* Снимок / Поделиться */
-shotBtn.onclick=()=>{lastShot=canvas.toDataURL('image/png');const a=document.createElement('a');a.href=lastShot;a.download='nails.png';a.textContent='Скачать снимок';downloads.prepend(a);};
-shareBtn.onclick=async()=>{if(!lastShot)return alert('Сначала сделай снимок');const blob=await(await fetch(lastShot)).blob();const file=new File([blob],'nails.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'Маникюр'});}else{const a=document.createElement('a');a.href=lastShot;a.download='nails.png';a.click();}};
+/* ========= MediaPipe Hands ========= */
+const hands = new Hands({ locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${f}` });
+hands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.7, minTrackingConfidence:0.6 });
+hands.onResults(onResults);
 
-/* Установка */
+const FINGER_TIPS=[4,8,12,16,20];
+let userNailImage=null;
+imgInput.addEventListener('change', e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const img=new Image(); img.onload=()=>userNailImage=img; img.src=URL.createObjectURL(f);
+});
+
+/* ========= Nail geometry & fill ========= */
+function getNailPolygon(lm, tipIndex){
+  const tip=lm[tipIndex], dip=lm[tipIndex-1], pip=lm[tipIndex-2];
+  if(!tip||!dip||!pip) return null;
+  const tipX=tip.x*vcan.width, tipY=tip.y*vcan.height;
+  const dipX=dip.x*vcan.width, dipY=dip.y*vcan.height;
+  const pipX=pip.x*vcan.width, pipY=pip.y*vcan.height;
+  const vx=tipX-pipX, vy=tipY-pipY, len=Math.hypot(vx,vy)||1;
+  const halfW = len*0.18; // ширина ногтя
+  const nx=-vy/len*halfW, ny=vx/len*halfW;
+  return [
+    {x: dipX+nx, y: dipY+ny},
+    {x: dipX-nx, y: dipY-ny},
+    {x: tipX-nx, y: tipY-ny},
+    {x: tipX+nx, y: tipY+ny}
+  ];
+}
+function pathFromPoly(p){ if(!p) return null; const path=new Path2D(); path.moveTo(p[0].x,p[0].y); for(let i=1;i<p.length;i++) path.lineTo(p[i].x,p[i].y); path.closePath(); return path; }
+function hexToRgba(hex,a=1){const c=hex.replace('#','');const n=parseInt(c,16);return `rgba(${(n>>16)&255},${(n>>8)&255},${n&255},${a})`;}
+
+/* ========= Templates ========= */
+const Template = {
+  Hearts: ()=>{ const c=document.createElement('canvas'); c.width=96;c.height=96;const g=c.getContext('2d'); g.fillStyle='#121631';g.fillRect(0,0,96,96);g.fillStyle='#ff88b6';
+    for(let y=16;y<96;y+=32){for(let x=16;x<96;x+=32){g.save();g.translate(x+((y/32)%2?16:0),y);g.scale(.6,.6);
+      g.beginPath();g.moveTo(0,-10);g.bezierCurveTo(-14,-26,-36,6,0,32);g.bezierCurveTo(36,6,14,-26,0,-10);g.fill();g.restore();}}
+    return c; },
+  Stars: ()=>{ const c=document.createElement('canvas'); c.width=96;c.height=96;const g=c.getContext('2d'); g.fillStyle='#0f1430';g.fillRect(0,0,96,96);g.fillStyle='rgba(255,255,255,.9)';
+    function star(x,y,s){g.save();g.translate(x,y);g.beginPath();for(let i=0;i<5;i++){const a=i*2*Math.PI/5-Math.PI/2;const a2=a+Math.PI/5;const r1=s,r2=s*.45;if(i===0)g.moveTo(Math.cos(a)*r1,Math.sin(a)*r1);else g.lineTo(Math.cos(a)*r1,Math.sin(a)*r1);g.lineTo(Math.cos(a2)*r2,Math.sin(a2)*r2);}g.closePath();g.fill();g.restore();}
+    for(let i=0;i<14;i++) star(Math.random()*96, Math.random()*96, 2+Math.random()*3); return c; },
+  Glitter: ()=>{ const c=document.createElement('canvas'); c.width=96;c.height=96;const g=c.getContext('2d');const grd=g.createLinearGradient(0,0,96,96);grd.addColorStop(0,'#1b1f46');grd.addColorStop(1,'#2c3a7a');g.fillStyle=grd;g.fillRect(0,0,96,96);
+    for(let i=0;i<70;i++){const x=Math.random()*96,y=Math.random()*96,r=1+Math.random()*1.8;g.fillStyle=`hsla(${220+Math.random()*80},90%,${70+Math.random()*20}%,${0.6+Math.random()*0.4})`;g.beginPath();g.arc(x,y,r,0,Math.PI*2);g.fill();} return c; },
+  Rainbow: ()=>{ const c=document.createElement('canvas'); c.width=128;c.height=128;const g=c.getContext('2d'); for(let i=0;i<128;i++){g.strokeStyle=`hsl(${(i*3)%360},90%,60%)`;g.beginPath();g.moveTo(0,i);g.lineTo(128,i);g.stroke();} return c; }
+};
+let currentTemplate='Hearts', templateCanvas=Template[currentTemplate]();
+
+/* UI переключение режимов покрытия */
+let currentMode='color';
+modeRadios.forEach(r=>r.addEventListener('change',()=>{
+  currentMode=document.querySelector('input[name="mode"]:checked').value;
+  colorField.style.display = currentMode==='color'?'':'none';
+  tplField.style.display   = currentMode==='template'?'':'none';
+  imgField.style.display   = currentMode==='image'?'':'none';
+}));
+tplList.addEventListener('click',e=>{
+  const item=e.target.closest('.tpl'); if(!item) return;
+  document.querySelectorAll('.tpl').forEach(n=>n.classList.remove('active'));
+  item.classList.add('active'); currentTemplate=item.dataset.tpl;
+  templateCanvas=Template[currentTemplate]();
+});
+
+/* ========= Draw nails ========= */
+function fillNail(poly){
+  const path = pathFromPoly(poly); if(!path) return;
+  vctx.save(); vctx.clip(path);
+  if(currentMode==='color'){
+    vctx.fillStyle = hexToRgba(fillColor.value, .75);
+    vctx.fill(path);
+  } else if(currentMode==='template'){
+    const xs = poly.map(p=>p.x), ys = poly.map(p=>p.y);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+    const w=Math.max(1, maxX-minX), h=Math.max(1, maxY-minY);
+    const scale = Math.max(0.4, Math.min(1.8, (0.8*w)/templateCanvas.width));
+    const pattC=document.createElement('canvas'); pattC.width=Math.max(1,Math.round(templateCanvas.width*scale)); pattC.height=Math.max(1,Math.round(templateCanvas.height*scale));
+    pattC.getContext('2d').drawImage(templateCanvas,0,0,pattC.width,pattC.height);
+    const patt=vctx.createPattern(pattC,'repeat');
+    const offX = Math.floor(minX)%pattC.width, offY = Math.floor(minY)%pattC.height;
+    vctx.translate(minX-offX, minY-offY);
+    vctx.fillStyle=patt; vctx.fillRect(offX, offY, w+offX+20, h+offY+20);
+  } else if(currentMode==='image' && userNailImage){
+    const xs = poly.map(p=>p.x), ys=poly.map(p=>p.y);
+    const minX=Math.min(...xs), maxX=Math.max(...xs), minY=Math.min(...ys), maxY=Math.max(...ys);
+    const w=Math.max(1,maxX-minX), h=Math.max(1,maxY-minY);
+    const m=6; vctx.drawImage(userNailImage, minX-m, minY-m, w+m*2, h+m*2);
+  }
+  vctx.restore();
+  vctx.strokeStyle='rgba(255,255,255,.65)'; vctx.lineWidth=1.5; vctx.stroke(path);
+}
+
+/* ========= MediaPipe results handler ========= */
+async function onResults(res){
+  vctx.clearRect(0,0,vcan.width,vcan.height);
+  if(isMirror && facingMode==='user'){
+    vctx.save(); vctx.scale(-1,1); vctx.drawImage(res.image, -vcan.width, 0, vcan.width, vcan.height); vctx.restore();
+  } else {
+    vctx.drawImage(res.image,0,0,vcan.width,vcan.height);
+  }
+  if(res.multiHandLandmarks && res.multiHandLandmarks.length){
+    let lm = res.multiHandLandmarks[0];
+    if(isMirror && facingMode==='user') lm = lm.map(p=>({x:1-p.x,y:p.y,z:p.z}));
+    FINGER_TIPS.forEach(i=>{ const poly=getNailPolygon(lm,i); if(poly) fillNail(poly); });
+  }
+}
+
+/* ========= Effects layer ========= */
+let effect='none';
+effectSelect.addEventListener('change',()=>effect=effectSelect.value);
+
+const FX = {
+  fire(parts,dt){
+    for(const p of parts){
+      p.y -= (0.6+p.s*0.4)*dt*90; p.x += p.vx*dt*60; p.t+=dt;
+      if(p.t>p.life){ resetFire(p); }
+      const a = 1-p.t/p.life, size=p.size*(0.7+0.3*a);
+      const g = ectx.createRadialGradient(p.x,p.y,size*0.2,p.x,p.y,size);
+      g.addColorStop(0,`rgba(255,220,160,${a})`);
+      g.addColorStop(0.5,`rgba(255,140,40,${a*0.7})`);
+      g.addColorStop(1,`rgba(80,30,10,0)`);
+      ectx.fillStyle=g; ectx.beginPath(); ectx.arc(p.x,p.y,size,0,Math.PI*2); ectx.fill();
+    }
+  },
+  lightning(stat,dt){
+    if(!stat.on && Math.random()<0.02){ stat.on=true; stat.t=0.15; }
+    if(stat.on){
+      const lf = stat.t/0.15;
+      ectx.lineWidth = 2+2*(1-lf);
+      ectx.strokeStyle = `rgba(180,220,255,${lf})`;
+      ectx.shadowColor = `rgba(180,220,255,${lf})`;
+      ectx.shadowBlur = 10*lf;
+      const cx=ecan.width*0.5, cy=ecan.height*0.2, seg=6, len=ecan.height*0.5;
+      ectx.beginPath(); ectx.moveTo(cx, cy);
+      for(let i=1;i<=seg;i++){
+        const nx=cx+(Math.random()*60-30), ny=cy + (i/seg)*len + (Math.random()*20-10);
+        ectx.lineTo(nx,ny);
+      }
+      ectx.stroke();
+      stat.t -= dt; if(stat.t<=0){stat.on=false;}
+      ectx.shadowBlur=0;
+    }
+  },
+  snow(flakes,dt){
+    for(const f of flakes){
+      f.y += (0.4+f.s*0.6)*dt*60; f.x += Math.sin(f.t*2)*0.5; f.t+=dt;
+      if(f.y>ecan.height+5){ f.y=-10; f.x=Math.random()*ecan.width; }
+      ectx.fillStyle='rgba(255,255,255,.9)'; ectx.beginPath(); ectx.arc(f.x,f.y,1.2+f.s*1.8,0,Math.PI*2); ectx.fill();
+    }
+  },
+  hearts(parts,dt){
+    for(const p of parts){
+      p.y -= (0.3+p.s*0.5)*dt*60; p.x += Math.sin(p.t*3+p.ph)*0.8; p.t+=dt;
+      if(p.t>p.life){ resetHeart(p); }
+      const a = 1-p.t/p.life;
+      ectx.save(); ectx.translate(p.x,p.y); ectx.rotate(Math.sin(p.t+p.ph)*0.3);
+      ectx.scale(0.6+0.6*p.s,0.6+0.6*p.s);
+      ectx.fillStyle=`rgba(255,120,180,${a})`;
+      ectx.beginPath();
+      ectx.moveTo(0,-5); ectx.bezierCurveTo(-12,-20,-30,10,0,25); ectx.bezierCurveTo(30,10,12,-20,0,-5);
+      ectx.fill(); ectx.restore();
+    }
+  }
+};
+function resetFire(p){ p.x=ecan.width*0.5+(Math.random()*80-40); p.y=ecan.height*0.8+(Math.random()*20-10); p.vx=(Math.random()-.5)*0.6; p.s=Math.random(); p.t=0; p.life=0.6+Math.random()*0.9; p.size=8+Math.random()*16; }
+function resetHeart(p){ p.x=Math.random()*ecan.width; p.y=ecan.height+10; p.s=Math.random(); p.ph=Math.random()*Math.PI*2; p.t=0; p.life=1.4+Math.random()*1.6; }
+
+const fireParts = Array.from({length:70},()=>{const o={}; resetFire(o); return o;});
+const snowFlakes = Array.from({length:120},()=>({x:Math.random()*ecan.width,y:Math.random()*ecan.height,s:Math.random(),t:Math.random()*10}));
+const heartParts = Array.from({length:40},()=>{const o={}; resetHeart(o); return o;});
+const lightningState={on:false,t:0};
+
+/* ========= Chicken (sprite) ========= */
+let chickenOn=false;
+chickenToggle.addEventListener('change',()=>chickenOn=chickenToggle.checked);
+
+const DEFAULT_SVG = encodeURIComponent(`<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 128 128'>
+  <rect width='128' height='128' fill='none'/>
+  <g transform='translate(0,0)'>
+    <circle cx='64' cy='64' r='42' fill='#ffdca8'/>
+    <ellipse cx='84' cy='40' rx='16' ry='12' fill='#ffdca8'/>
+    <circle cx='88' cy='36' r='5' fill='#ff3b6b'/>
+    <circle cx='78' cy='60' r='4' fill='#222'/>
+    <polygon points='90,68 106,72 90,76' fill='#ffb34f'/>
+    <ellipse cx='44' cy='92' rx='12' ry='8' fill='#ffdca8'/>
+    <ellipse cx='84' cy='92' rx='12' ry='8' fill='#ffdca8'/>
+  </g>
+</svg>`);
+let chickenImg = new Image();
+chickenImg.src = 'data:image/svg+xml;utf8,' + DEFAULT_SVG;
+
+chickenSpriteInput.addEventListener('change',e=>{
+  const f=e.target.files?.[0]; if(!f) return;
+  const img=new Image(); img.onload=()=>chickenImg=img; img.src=URL.createObjectURL(f);
+});
+
+const chicken = { x:100, y:120, vx:80, vy:0, w:96, h:96, dir:1 };
+function stepChicken(dt){
+  const speed = parseFloat(chickenSpeed.value) || 1;
+  chicken.x += chicken.vx * dt * speed * chicken.dir;
+  chicken.y += Math.sin(performance.now()/400)*20 * dt * speed;
+
+  if(chicken.x > ccan.width - chicken.w/2){ chicken.dir = -1; }
+  if(chicken.x < chicken.w/2){ chicken.dir = 1; }
+  // рисуем
+  cctx.save();
+  cctx.translate(chicken.x, chicken.y);
+  cctx.scale(chicken.dir, 1);
+  cctx.drawImage(chickenImg, -chicken.w/2, -chicken.h/2, chicken.w, chicken.h);
+  cctx.restore();
+}
+
+/* ========= Main loop ========= */
+let last=performance.now();
+async function mainLoop(){
+  const now=performance.now(), dt=(now-last)/1000; last=now;
+
+  // Hands → nails
+  if(video.readyState>=2){ await hands.send({image:video}); }
+
+  // Effects
+  ectx.clearRect(0,0,ecan.width,ecan.height);
+  if(effect==='fire') FX.fire(fireParts,dt);
+  else if(effect==='lightning') FX.lightning(lightningState,dt);
+  else if(effect==='snow') FX.snow(snowFlakes,dt);
+  else if(effect==='hearts') FX.hearts(heartParts,dt);
+
+  // Chicken
+  cctx.clearRect(0,0,ccan.width,ccan.height);
+  if(chickenOn) stepChicken(dt);
+
+  requestAnimationFrame(mainLoop);
+}
+
+/* ========= Snapshot + Share ========= */
+let lastShot=null;
+shotBtn.onclick=()=>{
+  // соберём три слоя в один временный canvas для снимка
+  const out = document.createElement('canvas'); out.width=vcan.width; out.height=vcan.height;
+  const g = out.getContext('2d');
+  g.drawImage(vcan,0,0);
+  g.drawImage(ecan,0,0);
+  g.drawImage(ccan,0,0);
+  lastShot = out.toDataURL('image/png');
+
+  const a=document.createElement('a'); a.href=lastShot; a.download='nails.png'; a.textContent='Скачать снимок';
+  const wrap=document.createElement('div'); wrap.appendChild(a); downloads.prepend(wrap);
+};
+shareBtn.onclick=async()=>{
+  if(!lastShot){ alert('Сначала сделай снимок'); return; }
+  const blob=await (await fetch(lastShot)).blob();
+  const file=new File([blob],'nails.png',{type:'image/png'});
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    await navigator.share({files:[file], title:'Маникюр', text:'Мой дизайн ногтей'});
+  }else{
+    const a=document.createElement('a'); a.href=lastShot; a.download='nails.png'; a.click();
+  }
+};
+
+/* ========= PWA install + updates ========= */
 let deferredPrompt;
-window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;installBtn.style.display='inline-block';});
-installBtn.addEventListener('click',async()=>{deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none';});
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault(); deferredPrompt=e; installBtn.style.display='inline-block';});
+installBtn.addEventListener('click',async()=>{ if(deferredPrompt){ deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.style.display='none'; }});
 
-/* Service Worker с обновлением */
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').then(reg=>{
-    if(reg.waiting)showUpdate();
+    if(reg.waiting) showUpdate();
     reg.addEventListener('updatefound',()=>{
-      const newSW=reg.installing;
-      newSW.addEventListener('statechange',()=>{
-        if(newSW.state==='installed'&&navigator.serviceWorker.controller)showUpdate();
+      const nw = reg.installing;
+      nw.addEventListener('statechange',()=>{
+        if(nw.state==='installed' && navigator.serviceWorker.controller) showUpdate();
       });
     });
   });
-  let refreshing;
+  let refreshing=false;
   navigator.serviceWorker.addEventListener('controllerchange',()=>{
-    if(refreshing)return;window.location.reload();refreshing=true;
+    if(refreshing) return; window.location.reload(); refreshing=true;
   });
 }
-function showUpdate(){reloadBtn.style.display='inline-block';reloadBtn.onclick=()=>{navigator.serviceWorker.getRegistration().then(reg=>{if(reg.waiting)reg.waiting.postMessage({type:'SKIP_WAITING'});});};}
+function showUpdate(){
+  reloadBtn.style.display='inline-block';
+  reloadBtn.onclick=()=>{ navigator.serviceWorker.getRegistration().then(reg=>{ if(reg.waiting) reg.waiting.postMessage({type:'SKIP_WAITING'}); }); };
+}
 </script>
 </body>
 </html>
