@@ -1,530 +1,837 @@
-<!DOCTYPE html>
-<html lang="ru">
+<!DOCTYPE html><html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <title>Маникюр: эффекты + прогресс загрузки модели</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-  <style>
-    :root { --bg:#0f1220; --card:rgba(30,40,80,.95); --radius:14px; --accent:#7ae0ff; --muted:#8f9acb; --shadow:0 40px 100px -10px rgba(0,0,0,.6); }
-    *{box-sizing:border-box;}
-    body{ margin:0; font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; background:var(--bg); color:#eef2fc; }
-    .layout{ max-width:1200px; margin:auto; padding:14px; display:grid; grid-template-columns:2fr 1fr; gap:18px; }
-    @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } }
-    .card{ background:var(--card); border-radius:var(--radius); padding:18px; position:relative; box-shadow:var(--shadow); }
-    h1{ margin:0; font-size:1.6rem; font-weight:600; }
-    .video-wrapper{ position:relative; border-radius:12px; overflow:hidden; background:#0b0f1e; aspect-ratio:4/3; margin-top:8px; margin-bottom:12px; }
-    video,canvas{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:12px; }
-    .row{ display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:10px; }
-    .form-group{ display:flex; flex-direction:column; gap:4px; flex:1; min-width:140px; }
-    label{ font-size:12px; margin-bottom:2px; text-transform:uppercase; letter-spacing:.5px; }
-    select,input[type=color],input[type=range]{ padding:8px 10px; border-radius:8px; border:none; background:rgba(255,255,255,.06); color:#eef2fc; font-size:14px; outline:none; appearance:none; }
-    input[type=range]{ width:100%; }
-    .btn{ padding:10px 16px; border:none; border-radius:10px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:6px; background:linear-gradient(135deg,#4da3ff,#7ae0ff); color:#0f1220; }
-    .btn.outline{ background:transparent; border:2px solid var(--accent); color:var(--accent); }
-    .badge{ background:rgba(122,224,255,.15); padding:6px 14px; border-radius:999px; font-size:13px; display:inline-block; font-weight:600; }
-    .controls{ display:flex; gap:12px; flex-wrap:wrap; margin-top:6px; }
-    .downloads{ margin-top:10px; display:flex; flex-direction:column; gap:6px; font-size:14px; }
-    .effect-box{ background:rgba(255,255,255,.04); border-radius:10px; padding:12px; margin-top:8px; }
-    .small{ font-size:13px; color:var(--muted); }
-    .divider{ height:1px; background:rgba(255,255,255,.08); margin:12px 0; }
-    .toggles{ display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
-    .checkbox-wrapper{ display:inline-flex; align-items:center; gap:6px; font-size:13px; background:rgba(255,255,255,.05); padding:6px 10px; border-radius:8px; }
-    .checkbox-wrapper input{ margin:0; accent-color:#7ae0ff; width:16px; height:16px; }
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no"/>
+<title>Маникюр PWA — кольца и эффекты</title>
+<meta name="theme-color" content="#0b1020"/>
+<link rel="manifest" href="manifest.json"/>
+<style>
+  :root{
+    color-scheme: dark;
+    --bg:#0b1020;         /* глубокий фон */
+    --bg2:#0e1633;        /* слой */
+    --glass:#0b122299;    /* стекло */
+    --line:#1f2a44;       /* линии */
+    --txt:#e9edf5;        /* текст */
+    --muted:#9fb0c8;      /* вторичный */
+    --acc:#7dd3fc;        /* акцент */
+    --acc2:#a78bfa;       /* акцент 2 */
+    --hot:#ff82b1;        /* розовый */
+    --btn-scale:.86;      /* масштаб кнопок (+15%) */
+    --bar-h: calc(62px * var(--btn-scale));
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;background:var(--bg);color:var(--txt);overflow:hidden}/* анимированный фон */ .bg-aurora{position:fixed;inset:-20% -10%;filter:blur(60px);z-index:0;pointer-events:none;opacity:.5} .blob{position:absolute;border-radius:50%;mix-blend-mode:screen} .b1{left:10%;top:10%;width:40vmax;height:40vmax;background:radial-gradient(circle at 30% 30%, #38bdf8, transparent 60%);animation:float1 14s ease-in-out infinite} .b2{right:8%;top:20%;width:36vmax;height:36vmax;background:radial-gradient(circle at 70% 40%, #a78bfa, transparent 60%);animation:float2 18s ease-in-out infinite} .b3{left:20%;bottom:0;width:36vmax;height:36vmax;background:radial-gradient(circle at 50% 50%, #ff6bb0, transparent 60%);animation:float3 22s ease-in-out infinite} @keyframes float1{50%{transform:translateY(-6vh) translateX(2vw)}} @keyframes float2{50%{transform:translateY(5vh) translateX(-3vw)}} @keyframes float3{50%{transform:translateY(-4vh) translateX(3vw)}}
 
-    /* Loader */
-    #loader{ position:fixed; inset:0; background:#0b0f1ee6; display:grid; place-items:center; z-index:9999; }
-    #loader .box{ width:min(440px,92vw); background:var(--card); border-radius:16px; padding:16px; box-shadow:var(--shadow); }
-    #loader .title{ font:600 16px system-ui; margin-bottom:8px; color:#eef2fc; display:flex; justify-content:space-between; }
-    #loader .bar{ height:10px; background:rgba(255,255,255,.15); border-radius:999px; overflow:hidden; }
-    #loader .fill{ height:100%; width:0%; background:linear-gradient(90deg,#4da3ff,#7ae0ff); }
-    #loader .stage{ margin-top:8px; color:#8f9acb; font:13px system-ui; display:flex; justify-content:space-between; }
-    #loader .hint{ margin-top:8px; color:#8f9acb; font:12px system-ui; }
-    #error{ display:none; background:#2b1938; border:1px solid #ff7ab3; color:#ffd6e8; padding:10px; border-radius:8px; margin-top:10px; font-size:13px; }
-  </style>
+.video-wrap{position:relative;width:100%;height:calc(100vh - var(--bar-h) - 20px);z-index:1} video,canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;touch-action:none} #videoCanvas{z-index:1}
+
+/* стеклянная компакт-панель снизу */ .bottom-bar{position:fixed;bottom:10px;left:12px;right:12px;height:var(--bar-h);backdrop-filter:saturate(140%) blur(12px);background:linear-gradient(180deg,var(--glass),#0b122266);border:1px solid #1a2440;border-radius:18px;display:flex;justify-content:space-between;align-items:center;gap:6px;padding:0 8px;z-index:3;box-shadow:0 10px 40px #0008} .neon{position:absolute;inset:-1px;border-radius:18px;pointer-events:none;background:linear-gradient(90deg,transparent, #38bdf8 20%, #a78bfa 50%, #ff6bb0 80%, transparent);opacity:.35;filter:blur(8px)} .btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:calc(4px * var(--btn-scale));color:var(--muted);font-size:calc(.66rem * var(--btn-scale));user-select:none;cursor:pointer;padding:calc(6px * var(--btn-scale)) calc(8px * var(--btn-scale));border-radius:calc(12px * var(--btn-scale));min-width:calc(50px * var(--btn-scale));position:relative} .btn svg{width:calc(22px * var(--btn-scale));height:calc(22px * var(--btn-scale));fill:var(--muted)} .btn:hover{background:#16233a80;color:var(--acc)} .btn:hover svg{fill:var(--acc)} .btn[disabled]{opacity:.45;pointer-events:none} .btn.active{background:#112034cc;color:var(--acc)} .btn.active svg{fill:var(--acc)} .group{display:flex;gap:calc(4px * var(--btn-scale));align-items:center}
+
+#downloads{position:fixed;top:10px;right:10px;font-size:.8rem;z-index:4} #downloads a{color:var(--acc);display:block;margin-bottom:6px} .hint{position:fixed;left:12px;top:12px;background:#0b253199;padding:6px 10px;border:1px solid #1a2440;border-radius:10px;font-size:.8rem;z-index:4;box-shadow:0 6px 20px #0006} .badge{position:fixed;top:12px;right:12px;font-size:11px;color:#9fb0c8;background:#0b1222;padding:4px 8px;border:1px solid #1a2440;border-radius:999px;z-index:4}
+
+/* Modal sheet */ .modal{position:fixed;inset:0;display:none;align-items:flex-end;justify-content:center;z-index:5} .modal.show{display:flex} .scrim{position:absolute;inset:0;background:#0009} .sheet{position:relative;width:100%;max-width:860px;background:linear-gradient(180deg,#0c1430,#0a1026);border-top-left-radius:18px;border-top-right-radius:18px;padding:14px;border:1px solid #1a2440;box-shadow:0 -12px 30px #000a} .row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 0} .row label{font-size:.92rem;color:#cfe1ff} .row input[type=range]{width:56%} .switch{display:flex;gap:8px;flex-wrap:wrap} .chip{padding:6px 10px;border:1px solid #2a365f;border-radius:999px;color:#cbd5e1;cursor:pointer;background:#0e1530} .chip.active{border-color:#5ac8fa;color:#5ac8fa;background:#11254e} .btn2{padding:9px 12px;background:#11203a;color:#7dd3fc;border:1px solid #1a2440;border-radius:10px;cursor:pointer;font-size:.92rem} .btn2.secondary{background:#0f172a;color:#cbd5e1} .btn2.danger{background:#2a1116;color:#fda4af;border-color:#7f1d1d} .flex{display:flex;gap:8px;flex-wrap:wrap} .grid{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:8px} .stk{font-size:26px;line-height:1;padding:8px;border-radius:10px;background:#0b253133;border:1px solid #1f2937;cursor:pointer;text-align:center} .stk:active{transform:scale(.95)}
+
+/* выбор стикера / кольца */ .ringSel{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px} .ringItem{background:#0b253133;border:1px solid #1f2937;border-radius:10px;padding:8px;display:flex;align-items:center;justify-content:center;cursor:pointer} .ringItem.active{outline:2px solid #7dd3fc} .ringItem img{max-width:100%;max-height:64px;display:block}
+
+.ring{position:fixed;border:2px dashed var(--acc);border-radius:50%;width:56px;height:56px;margin-left:-28px;margin-top:-28px;pointer-events:none;z-index:6;display:none}
+
+/* upload preview */ .previewWrap{display:flex;gap:10px;align-items:flex-start} .previewBox{flex:1;min-height:180px;background:#0b1222;border:1px dashed #223;border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative} .previewBox canvas{max-width:100%;height:auto;background-image:linear-gradient(45deg, #111827 25%, transparent 25%),linear-gradient(-45deg, #111827 25%, transparent 25%),linear-gradient(45deg, transparent 75%, #111827 75%),linear-gradient(-45deg, transparent 75%, #111827 75%);background-size:16px 16px;background-position:0 0,0 8px,8px -8px,-8px 0} </style>
+
 </head>
 <body>
-  <!-- LOADER -->
-  <div id="loader">
-    <div class="box">
-      <div class="title">Загрузка… <span id="loader_pct">0%</span></div>
-      <div class="bar"><div id="loader_bar" class="fill"></div></div>
-      <div class="stage"><span id="loader_stage">Инициализация</span><span id="loader_sub">—</span></div>
-      <div class="hint">Если долго висит на 0–10% — проверь интернет. Для камеры нужен HTTPS или http://localhost.</div>
-      <div id="error"></div>
+  <div class="bg-aurora" aria-hidden="true">
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
+    <div class="blob b3"></div>
+  </div>  <div id="hint" class="hint" style="display:none">Подсказка</div>
+  <div id="fps" class="badge">FPS: —</div>
+  <div id="downloads"></div>
+  <div id="selRing" class="ring"></div>
+  <div id="fingerRing" class="ring" style="border-style:solid"></div>  <div id="stage" class="video-wrap">
+    <video id="video" playsinline muted></video>
+    <canvas id="videoCanvas"></canvas>
+  </div>  <div id="bar" class="bottom-bar">
+    <div class="neon"></div>
+    <div class="group">
+      <div class="btn" id="btnShot">📸<div>Снимок</div></div>
+      <div class="btn" id="btnShare">↗️<div>Поделиться</div></div>
+      <div class="btn" id="btnFreeze">🧊<div>Стоп</div></div>
     </div>
+    <div class="group">
+      <div class="btn" id="btnPoop">💩<div>На ноготь</div></div>
+      <div class="btn" id="btnStickers">💖<div>Стикеры</div></div>
+      <div class="btn" id="btnRings">💍<div>Кольцо</div></div>
+      <div class="btn" id="btnFx">✨<div>Эффекты</div></div>
+      <div class="btn" id="btnSettings">⚙️<div>Ногти</div></div>
+    </div>
+    <div class="group">
+      <div class="btn" id="btnCam">🔁<div>Камера</div></div>
+      <div class="btn active" id="btnAuto">✨<div>Авто</div></div>
+      <div class="btn" id="btnInstall">⬇️<div>Уст.</div></div>
+    </div>
+  </div>  <!-- МОДАЛКА: Ногти -->  <div id="modalNails" class="modal">
+    <div class="scrim" data-close></div>
+    <div class="sheet">
+      <div class="row"><label>Цвет лака</label><input id="colorPicker" type="color" value="#f472b6"></div>
+      <div class="row"><label>Ширина/длина</label><input id="widthRange" type="range" min="0.45" max="1.1" step="0.01" value="0.70"></div>
+      <div class="row"><label>Блеск</label><div class="switch"><button id="glossOn" class="chip">Вкл</button><button id="glossOff" class="chip">Выкл</button></div></div>
+      <div class="row"><label>Форма</label><div class="switch">
+        <button class="chip" data-shape="oval">Овал</button>
+        <button class="chip" data-shape="almond">Миндаль</button>
+        <button class="chip" data-shape="square">Квадрат</button>
+      </div></div>
+      <div class="row"><label>Блёстки</label><div class="switch"><button id="glitterOnBtn" class="chip">Вкл</button><button id="glitterOffBtn" class="chip">Выкл</button></div></div>
+      <div class="row"><label>Интенсивность</label><input id="glitterRange" type="range" min="0" max="1" step="0.01" value="0.7"></div>
+      <div class="row"><div class="flex">
+        <button class="btn2 secondary" data-close>Закрыть</button>
+      </div></div>
+    </div>
+  </div>  <!-- МОДАЛКА: Стикеры -->  <div id="modalStk" class="modal">
+    <div class="scrim" data-close></div>
+    <div class="sheet">
+      <div class="row"><label>Приклеить к ногтю</label><div class="switch"><button id="stkAttachOn" class="chip">Да</button><button id="stkAttachOff" class="chip">Нет</button></div></div>
+      <div class="row"><label>Куда</label><div class="switch"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="addToAllStk" checked> На все ногти</label></div></div>
+      <div class="row"><label>Стикеры</label><div class="grid" id="stkGrid"></div></div>
+      <div class="flex" style="justify-content:space-between;margin-top:8px">
+        <button class="btn2" id="btnCustomSticker">🖼️ Свой стикер</button>
+        <button class="btn2" id="stkDownloadSel">⬇️ Скачать выбранный</button>
+        <button class="btn2 secondary" id="stkDeleteSel">Удалить выбранный</button>
+        <button class="btn2 danger" id="stkDeleteAll">Удалить все</button>
+      </div>
+      <div style="font-size:12px;color:#9fb0c8;margin-top:8px">Совет: удерживай стикер для удаления. Щипок — масштаб, поворот — двумя пальцами.</div>
+    </div>
+  </div>  <!-- МОДАЛКА: Эффекты -->  <div id="modalFx" class="modal">
+    <div class="scrim" data-close></div>
+    <div class="sheet">
+      <div class="row"><label>Эффекты</label><div class="switch">
+        <button class="chip" id="fxHearts">Сердечки</button>
+        <button class="chip" id="fxStars">⭐ Звёзды</button>
+        <button class="chip" id="fxSpark">✨ Искорки</button>
+        <button class="chip" id="fxSnow">❄️ Снег</button>
+        <button class="chip" id="fxPoop">💩 Дождик</button>
+      </div></div>
+      <div class="row"><label>Плотность</label><input id="fxDensity" type="range" min="0" max="1" step="0.01" value="0.6"></div>
+      <div class="row"><label>Область</label><div class="switch"><label style="display:flex;align-items:center;gap:6px"><input id="fxClip" type="checkbox"> Только на ногтях</label></div></div>
+      <div class="row"><div class="flex">
+        <button class="btn2 secondary" data-close>Закрыть</button>
+      </div></div>
+    </div>
+  </div>  <!-- МОДАЛКА: Кольца -->  <div id="modalRing" class="modal">
+    <div class="scrim" data-close></div>
+    <div class="sheet">
+      <div class="row"><label>Автокольцо (левая рука)</label><div class="switch"><button id="ringAutoBtn" class="chip">Вкл</button></div></div>
+      <div class="row"><label>Размер</label><input id="ringScale" type="range" min="0.5" max="2.0" step="0.01" value="1.0"></div>
+      <div class="row"><label>Смещение ⟂</label><input id="ringOffU" type="range" min="-60" max="60" step="1" value="0"></div>
+      <div class="row"><label>Смещение ⟂⟂</label><input id="ringOffV" type="range" min="-40" max="40" step="1" value="8"></div>
+      <div class="row"><label>Поворот</label><input id="ringRot" type="range" min="-1.2" max="1.2" step="0.01" value="0"></div><div class="row"><label>Мои кольца</label><div class="ringSel" id="ringsGrid"></div></div>
+  <div class="flex" style="justify-content:space-between;margin-top:8px">
+    <button class="btn2" id="ringDownload">⬇️ Скачать активное</button>
+    <button class="btn2 danger" id="ringDelete">Удалить активное</button>
   </div>
 
-  <div class="layout">
-    <!-- Левая колонка -->
-    <div class="card" style="display:flex;flex-direction:column;">
-      <div class="row" style="justify-content:space-between;flex-wrap:wrap;">
-        <div>
-          <h1>Маникюр эффекты</h1>
-          <div class="small">Выбери эффект, цвета, включай/выключай линии и эффекты.</div>
-        </div>
-        <div class="badge">Жест: <span id="gesture_name">—</span></div>
-        <div class="badge">Уверенность: <span id="confidence">—</span></div>
-      </div>
-
-      <div class="video-wrapper">
-        <video id="input_video" playsinline muted></video>
-        <canvas id="overlay"></canvas>
-      </div>
-
-      <div class="panel" style="gap:10px;">
-        <div class="form-group">
-          <label for="effect_select">Эффект</label>
-          <select id="effect_select">
-            <option value="glow">Glow</option>
-            <option value="sparkle">Sparkle</option>
-            <option value="orbit">Orbit</option>
-            <option value="burst">Burst</option>
-            <option value="fire">Огонь</option>
-            <option value="lightning">Молния</option>
-            <option value="rainbow">Радуга</option>
-            <option value="confetti">Конфетти</option>
-            <option value="pulse">Пульс</option>
-            <option value="stars">Звёздный вихрь</option>
-            <option value="random">Случайный</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label for="primary_color">Основной цвет</label>
-          <input type="color" id="primary_color" value="#7ae0ff">
-        </div>
-        <div class="form-group">
-          <label for="accent_color">Акцентный</label>
-          <input type="color" id="accent_color" value="#ff7ae0">
-        </div>
-        <div class="form-group">
-          <label for="intensity">Интенсивность</label>
-          <input type="range" id="intensity" min="0.2" max="2" step="0.1" value="1">
-        </div>
-        <div class="form-group" style="flex:0 0 auto;">
-          <label>&nbsp;</label>
-          <div class="controls">
-            <button class="btn" id="new_design">Новый дизайн</button>
-            <button class="btn" id="switch_cam">Фронт/задняя</button>
-            <button class="btn outline" id="restart_cam">Перезапустить камеру</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="toggles">
-        <label class="checkbox-wrapper">
-          <input type="checkbox" id="toggle_lines" checked><span>Показывать линии</span>
-        </label>
-        <label class="checkbox-wrapper">
-          <input type="checkbox" id="toggle_effects" checked><span>Показывать эффекты</span>
-        </label>
-      </div>
-
-      <div class="divider"></div>
-      <div class="controls">
-        <button class="btn" id="snapshot_btn">Снимок</button>
-        <button class="btn" id="record_btn">Запись</button>
-        <button class="btn outline" id="stop_btn" disabled>Стоп</button>
-      </div>
-      <div class="downloads" id="downloads"></div>
-      <div class="small" style="margin-top:8px;">Эффект применяется сразу ко всем кончикам пальцев.</div>
-    </div>
-
-    <!-- Правая колонка -->
-    <div class="card">
-      <div class="row"><div class="badge">Текущий эффект</div></div>
-      <div class="effect-box">
-        <div class="small"><strong>Выбран:</strong> <span id="current_effect_label">Glow</span></div>
-        <div class="small"><strong>Цвет основной:</strong> <span id="current_primary_label">#7ae0ff</span></div>
-        <div class="small"><strong>Цвет акцентный:</strong> <span id="current_accent_label">#ff7ae0</span></div>
-        <div class="small"><strong>Интенсивность:</strong> <span id="current_intensity_label">1.0</span></div>
-      </div>
-      <div class="divider"></div>
-      <div class="small"><strong>Эффекты:</strong></div>
-      <ul class="small">
-        <li><strong>Glow:</strong> мягкое свечение.</li>
-        <li><strong>Sparkle:</strong> блёстки.</li>
-        <li><strong>Orbit:</strong> шарики по орбите.</li>
-        <li><strong>Burst:</strong> лучи из точки.</li>
-        <li><strong>Fire:</strong> пламя.</li>
-        <li><strong>Lightning:</strong> молнии.</li>
-        <li><strong>Rainbow:</strong> радужное кольцо.</li>
-        <li><strong>Confetti:</strong> конфетти.</li>
-        <li><strong>Pulse:</strong> пульсации.</li>
-        <li><strong>Stars:</strong> звёзды по орбите.</li>
-      </ul>
+  <hr style="opacity:.2;border:none;border-top:1px solid #223;margin:10px 0">
+  <div class="row"><label>Добавить из файла</label><input id="ringUploadFile" type="file" accept="image/*"></div>
+  <div class="row"><label>Добавить по URL</label><div class="flex" style="flex:1"><input id="ringUrl" placeholder="https://..." style="flex:1;background:#0b1222;color:#cbd5e1;border:1px solid #223;border-radius:8px;padding:8px"/><button class="btn2" id="ringLoadUrl">Загрузить</button></div></div>
+  <div class="row previewWrap">
+    <div class="previewBox"><canvas id="ringSrcPreview" width="360" height="220"></canvas></div>
+    <div class="previewBox"><canvas id="ringCutPreview" width="360" height="220"></canvas></div>
+  </div>
+  <div class="row"><label>Фон</label><div class="switch" style="gap:10px">
+    <input id="ringBgColor" type="color" value="#ffffff">
+    <button class="btn2" id="ringAutoBg">Авто из углов</button>
+    <button class="btn2" id="ringPickSample">Пипетка</button>
+    <label style="display:flex;align-items:center;gap:6px"><input id="ringInvertMask" type="checkbox"> Инвертировать</label>
+  </div></div>
+  <div class="row"><label>Толеранс</label><input id="ringTol" type="range" min="0" max="255" value="60"></div>
+  <div class="row"><label>Мягкость</label><input id="ringSoft" type="range" min="0" max="50" step="1" value="15"></div>
+  <div class="row">
+    <div class="flex">
+      <button class="btn2" id="ringProcess">Вырезать фон</button>
+      <button class="btn2" id="ringAdd" disabled>Добавить в список</button>
+      <button class="btn2 secondary" data-close>Закрыть</button>
     </div>
   </div>
+  <div style="font-size:12px;color:#9fb0c8;margin-top:8px">Примечание: загрузка по URL требует CORS. Если не получилось — скачай файл и добавь как «из файла».</div>
+</div>
 
-  <!-- зависимости -->
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+  </div>  <!-- МОДАЛКА: Свой стикер -->  <div id="modalUpload" class="modal">
+    <div class="scrim" data-close></div>
+    <div class="sheet">
+      <div class="row"><label>Файл</label><input id="uploadFile" type="file" accept="image/*"></div>
+      <div class="row previewWrap">
+        <div class="previewBox"><canvas id="srcPreview" width="360" height="220"></canvas></div>
+        <div class="previewBox"><canvas id="cutPreview" width="360" height="220"></canvas></div>
+      </div>
+      <div class="row"><label>Фон</label><div class="switch" style="gap:10px">
+        <input id="bgColor" type="color" value="#ffffff">
+        <button class="btn2" id="btnAutoBg">Авто из углов</button>
+        <button class="btn2" id="btnPickSample">Пипетка</button>
+        <label style="display:flex;align-items:center;gap:6px"><input id="invertMask" type="checkbox"> Инвертировать</label>
+      </div></div>
+      <div class="row"><label>Толеранс</label><input id="tolRange" type="range" min="0" max="255" value="60"></div>
+      <div class="row"><label>Мягкость</label><input id="softRange" type="range" min="0" max="50" step="1" value="15"></div>
+      <div class="row"><label>Куда</label><div class="switch"><label style="display:flex;align-items:center;gap:6px"><input type="checkbox" id="addToAll" checked> На все ногти</label></div></div>
+      <div class="row">
+        <div class="flex">
+          <button class="btn2" id="btnProcess">Вырезать фон</button>
+          <button class="btn2" id="btnAddSticker" disabled>Добавить</button>
+          <button class="btn2 secondary" data-close>Закрыть</button>
+        </div>
+      </div>
+    </div>
+  </div>  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>  <script>
+/* ======== базовые ссылки ======== */
+const video=document.getElementById('video'), stage=document.getElementById('stage');
+const vcan=document.getElementById('videoCanvas'), vctx=vcan.getContext('2d',{willReadFrequently:true});
+const ringVis=document.getElementById('selRing');
 
-  <script>
-    /*** ===== UI: LOADER ===== ***/
-    const loader = document.getElementById('loader');
-    const loaderBar = document.getElementById('loader_bar');
-    const loaderPct = document.getElementById('loader_pct');
-    const loaderStage = document.getElementById('loader_stage');
-    const loaderSub = document.getElementById('loader_sub');
-    const loaderErr = document.getElementById('error');
+/* ======== камера ======== */
+let stream=null, facing='user';
+async function startCamera(){
+  try{
+    if(stream) stream.getTracks().forEach(function(t){t.stop()});
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false});
+    video.srcObject=stream; await video.play();
+    const fit=function(){ vcan.width=video.videoWidth||vcan.clientWidth; vcan.height=video.videoHeight||vcan.clientHeight; };
+    fit(); addEventListener('resize',fit,{passive:true});
+    requestAnimationFrame(loop); showHint('');
+  }catch(err){ showHint('Нет доступа к камере: '+err.message); }
+}
+startCamera();
 
-    function setProgress(pct, stage, sub){
-      const v = Math.max(0, Math.min(100, Math.round(pct)));
-      loaderBar.style.width = v + '%';
-      loaderPct.textContent = v + '%';
-      if (stage) loaderStage.textContent = stage;
-      if (sub !== undefined) loaderSub.textContent = sub || '—';
-      if (v >= 100) setTimeout(()=> loader.style.display = 'none', 150);
+document.getElementById('btnCam').onclick=async function(){ facing=(facing==='user')?'environment':'user'; await startCamera(); };
+
+/* ======== авто/ручн. фильтры ======== */
+let autoAdjust=true, smBrightness=1, smContrast=1, manualB=1, manualC=1;
+document.getElementById('btnAuto').onclick=function(){ autoAdjust=!autoAdjust; document.getElementById('btnAuto').classList.toggle('active',autoAdjust); persist(); };
+const measCan=document.createElement('canvas'); measCan.width=64; measCan.height=36;
+const mctx=measCan.getContext('2d',{willReadFrequently:true});
+function updateAdaptiveFilter(img){
+  mctx.drawImage(img,0,0,measCan.width,measCan.height);
+  const dataObj=mctx.getImageData(0,0,measCan.width,measCan.height);
+  const data=dataObj.data;
+  let sum=0,sumAbs=0; const n=data.length/4;
+  for(let i=0;i<data.length;i+=4){ const y=0.2126*data[i]+0.7152*data[i+1]+0.0722*data[i+2]; sum+=y; }
+  const mean=sum/n;
+  for(let i=0;i<data.length;i+=4){ const y=0.2126*data[i]+0.7152*data[i+1]+0.0722*data[i+2]; sumAbs+=Math.abs(y-mean); }
+  const mad=sumAbs/n;
+  const targetB=Math.max(0.6,Math.min(1.6,128/Math.max(1,mean)));
+  const targetC=1.0+Math.max(0,(30-Math.min(60,mad)))/150;
+  const a=0.12; smBrightness+=a*(targetB-smBrightness); smContrast+=a*(targetC-smContrast);
+}
+function applyFilterBeforeDraw(){ const b=(autoAdjust?smBrightness:1)*manualB; const c=(autoAdjust?smContrast:1)*manualC; vctx.filter='brightness('+b.toFixed(3)+') contrast('+c.toFixed(3)+')'; }
+
+/* ======== Mediapipe руки + кэш ногтей ======== */
+const hands=new Hands({ locateFile:function(f){return 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/'+f} });
+hands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.6, minTrackingConfidence:0.5 });
+let latestLandmarks=null, frozenLandmarks=null, isLeft=false;
+let nailCache=null; // [{path,center,width,angle,ux,uy,vx,vy} * 5]
+
+hands.onResults(function(res){
+  latestLandmarks=(res.multiHandLandmarks&&res.multiHandLandmarks[0])?res.multiHandLandmarks[0]:null;
+  isLeft = !!(res.multiHandedness && res.multiHandedness[0] && res.multiHandedness[0].label==='Left');
+
+  // фон
+  vctx.clearRect(0,0,vcan.width,vcan.height);
+  if(res.image){ if(autoAdjust) updateAdaptiveFilter(res.image); applyFilterBeforeDraw(); vctx.drawImage(res.image,0,0,vcan.width,vcan.height); vctx.filter='none'; }
+
+  const lm=frozenLandmarks||latestLandmarks;
+  nailCache = lm ? buildNails(lm) : null;
+
+  if(lm && nailsVisible){ drawNails(nailCache); }
+  if(lm && glitterOn){ drawGlitter(nailCache); }
+
+  // КОЛЬЦО — перед стикерами/FX, чтобы выглядело естественно
+  if(lm) drawAutoRing(lm);
+
+  drawStickers(lm, nailCache);
+  fxRender();
+});
+
+/* ======== геометрия ногтей ======== */
+const FINGERS=[[4,3,2],[8,7,6],[12,11,10],[16,15,14],[20,19,18]]; // большой..мизинец
+function LtoP(lm){ return { x:lm.x*vcan.width, y:lm.y*vcan.height }; }
+
+let nailColor='#f472b6', gloss=true, widthK=0.7, shape='oval', nailsVisible=true;
+let glitterOn=false, glitterDensity=0.7;
+
+function makeBasis(pTip,pPrev,pBase){
+  const vx=pTip.x-pPrev.x, vy=pTip.y-pPrev.y, len=Math.hypot(vx,vy)||1; // ось по пальцу
+  const nx=-vy/len, ny=vx/len; // поперёк ногтя
+  const seg=Math.hypot(pPrev.x-pBase.x,pPrev.y-pBase.y)||1;
+  const w=Math.max(6, seg*widthK*0.55), hw=w/2;
+  const A={x:pTip.x+nx*hw, y:pTip.y+ny*hw}, B={x:pTip.x-nx*hw, y:pTip.y-ny*hw};
+  const C={x:pPrev.x-nx*hw*0.92, y:pPrev.y-ny*hw*0.92}, D={x:pPrev.x+nx*hw*0.92, y:pPrev.y+ny*hw*0.92};
+  const center={x:(A.x+B.x+C.x+D.x)/4, y:(A.y+B.y+C.y+D.y)/4};
+  const width=Math.hypot(A.x-B.x,A.y-B.y);
+  const angle=Math.atan2(vy,vx);
+  return {A:B?A:A, B:B, C:C, D:D, vx:vx, vy:vy, len:len, nx:nx, ny:ny, center:center, width:width, angle:angle};
+}
+function nailPathFromBasis(b){
+  const A=b.A, B=b.B, vx=b.vx, vy=b.vy, len=b.len; const path=new Path2D();
+  if(shape==='square'){ path.moveTo(A.x,A.y); path.lineTo(B.x,B.y); path.lineTo(b.C.x,b.C.y); path.lineTo(b.D.x,b.D.y); path.closePath(); }
+  else{
+    const tipLen=Math.min(18,len*0.28), tip={x:(A.x+B.x)/2 + (vx/len)*tipLen, y:(A.y+B.y)/2 + (vy/len)*tipLen};
+    const curve=(shape==='almond')?0.92:0.65;
+    const ctrl1={x:A.x+(tip.x-A.x)*curve, y:A.y+(tip.y-A.y)*curve};
+    const ctrl2={x:B.x+(tip.x-B.x)*curve, y:B.y+(tip.y-B.y)*curve};
+    path.moveTo(A.x,A.y); path.quadraticCurveTo(ctrl1.x,ctrl1.y,tip.x,tip.y);
+    path.quadraticCurveTo(ctrl2.x,ctrl2.y,B.x,B.y);
+    path.lineTo(b.C.x,b.C.y); path.lineTo(b.D.x,b.D.y); path.closePath();
+  }
+  return path;
+}
+function buildNails(lm){
+  const arr=[]; for(let fi=0;fi<FINGERS.length;fi++){
+    const pair=FINGERS[fi]; const ti=pair[0], di=pair[1], pi=pair[2];
+    const pT=LtoP(lm[ti]), pD=LtoP(lm[di]), pP=LtoP(lm[pi]);
+    const b=makeBasis(pT,pD,pP); const path=nailPathFromBasis(b);
+    arr.push({path:path, center:b.center, width:b.width, angle:b.angle, ux:b.nx, uy:b.ny, vx:b.vx/b.len, vy:b.vy/b.len});
+  } return arr;
+}
+
+/* ======== рисование ногтей ======== */
+function drawNails(nails){
+  for(let i=0;i<nails.length;i++){
+    const n=nails[i];
+    // мягкая тень
+    vctx.save(); vctx.shadowColor='rgba(0,0,0,0.5)'; vctx.shadowBlur=4; vctx.lineWidth=3; vctx.strokeStyle='rgba(0,0,0,0.5)'; vctx.stroke(n.path); vctx.restore();
+    // заливка
+    vctx.fillStyle=hex2rgba(nailColor,0.9); vctx.fill(n.path);
+    // глянец
+    if(gloss){
+      const aStartX=n.center.x - n.ux*n.width*0.4, aStartY=n.center.y - n.uy*n.width*0.4;
+      const aStopX =n.center.x + n.ux*n.width*0.4, aStopY =n.center.y + n.uy*n.width*0.4;
+      const grad=vctx.createLinearGradient(aStartX,aStartY,aStopX,aStopY);
+      grad.addColorStop(0.15,'rgba(255,255,255,0.35)');
+      grad.addColorStop(0.45,'rgba(255,255,255,0.06)');
+      grad.addColorStop(1,'transparent');
+      vctx.save(); vctx.globalCompositeOperation='lighter'; vctx.fillStyle=grad; vctx.fill(n.path); vctx.restore();
     }
-    function showError(msg){
-      loaderErr.style.display = 'block';
-      loaderErr.textContent = String(msg || 'Неизвестная ошибка загрузки.');
+    // тонкий верхний контур
+    vctx.save(); vctx.lineWidth=1.2; vctx.strokeStyle='rgba(255,255,255,0.92)'; vctx.stroke(n.path); vctx.restore();
+  }
+}
+
+/* ======== блёстки ======== */
+function fract(x){return x-Math.floor(x)}
+function prand(x){return fract(Math.sin(x*12.9898+78.233)*43758.5453)}
+function drawGlitter(nails){
+  const t=performance.now()/1000;
+  vctx.save(); vctx.globalCompositeOperation='lighter';
+  for(let idx=0;idx<nails.length;idx++){
+    const n=nails[idx];
+    vctx.save(); vctx.clip(n.path);
+    const count=Math.max(4, Math.round(n.width*glitterDensity*0.6));
+    for(let i=0;i<count;i++){
+      const u=(prand(i*1.73+idx*2.1+t*0.35)*2-1)*n.width*0.45; // поперёк
+      const v=(prand(i*2.91+idx*3.7-t*0.22)*2-1)*n.width*0.22; // вдоль
+      const x=n.center.x+n.ux*u+n.vx*v; const y=n.center.y+n.uy*u+n.vy*v;
+      const tw=prand(i*8.3+t*4.7); const blink=0.55+0.45*Math.sin(t*6 + i*1.7 + idx);
+      const r=0.6+1.8*tw;
+      vctx.beginPath(); vctx.arc(x,y,r,0,Math.PI*2);
+      vctx.fillStyle='rgba(255,255,255,'+(0.35+0.55*blink)+')';
+      vctx.fill();
     }
+    vctx.restore();
+  }
+  vctx.restore();
+}
 
-    /*** ===== DOM ===== ***/
-    const video = document.getElementById('input_video');
-    const canvas = document.getElementById('overlay');
-    const ctx = canvas.getContext('2d');
-    const gestureNameEl = document.getElementById('gesture_name');
-    const confidenceEl = document.getElementById('confidence');
-    const effectSelect = document.getElementById('effect_select');
-    const primaryColorInput = document.getElementById('primary_color');
-    const accentColorInput = document.getElementById('accent_color');
-    const intensityInput = document.getElementById('intensity');
-    const newDesignBtn = document.getElementById('new_design');
-    const switchCamBtn = document.getElementById('switch_cam');
-    const restartCamBtn = document.getElementById('restart_cam');
-    const snapshotBtn = document.getElementById('snapshot_btn');
-    const recordBtn = document.getElementById('record_btn');
-    const stopBtn = document.getElementById('stop_btn');
-    const downloads = document.getElementById('downloads');
-    const currentEffectLabel = document.getElementById('current_effect_label');
-    const currentPrimaryLabel = document.getElementById('current_primary_label');
-    const currentAccentLabel = document.getElementById('current_accent_label');
-    const currentIntensityLabel = document.getElementById('current_intensity_label');
-    const toggleLinesCheckbox = document.getElementById('toggle_lines');
-    const toggleEffectsCheckbox = document.getElementById('toggle_effects');
+/* ======== FX: анимированные эффекты ======== */
+var fx={hearts:true,stars:true,sparkles:true,snow:false,poop:false,density:0.6,clipToNails:false};
+let fxParticles=[];
+function persistFx(){ try{ localStorage.setItem('fxPrefs', JSON.stringify(fx)); }catch(e){} }
+function restoreFx(){ try{ var v=JSON.parse(localStorage.getItem('fxPrefs')||'null'); if(v) for(var k in v){ fx[k]=v[k]; } }catch(e){} }
+restoreFx();
 
-    let showLines = true, showEffects = true;
-    let facingMode = 'user';
-    let currentStream = null;
-    let recorder = null, chunks = [];
-    let lastTime = performance.now(), deltaTimeGlobal = 0;
+function fxSpawn(type){
+  const W=vcan.width, H=vcan.height; let x,y,vx,vy,size,life,spin=0,rot=0,color='#fff',emoji=null,finger=null;
+  if(fx.clipToNails && nailCache && nailCache.length){ const i=Math.floor(Math.random()*nailCache.length); const n=nailCache[i]; const u=(Math.random()*2-1)*n.width*0.45; const v=(Math.random()*2-1)*n.width*0.18; x=n.center.x+n.ux*u+n.vx*v; y=n.center.y+n.uy*u+n.vy*v; finger=i; }
+  switch(type){
+    case 'hearts':
+      if(finger==null){ x=Math.random()*W; y=H+20; }
+      vx=(Math.random()*2-1)*15; vy=- (30+Math.random()*40); size=18+Math.random()*16; life=1.8+Math.random()*1.5; spin=(Math.random()*2-1)*0.6; emoji='❤️'; break;
+    case 'stars':
+      if(finger==null){ x=Math.random()*W; y=H+10; }
+      vx=(Math.random()*2-1)*20; vy=-(40+Math.random()*30); size=3+Math.random()*4; life=1.1+Math.random()*1.0; color='rgba(255,255,180,0.9)'; break;
+    case 'sparkles':
+      if(finger==null){ x=Math.random()*W; y=Math.random()*H; }
+      vx=(Math.random()*2-1)*10; vy=(Math.random()*2-1)*10; size=2+Math.random()*2; life=0.6+Math.random()*0.8; color='rgba(255,255,255,0.85)'; break;
+    case 'snow':
+      if(finger==null){ x=Math.random()*W; y=-10; }
+      vx=(Math.sin(performance.now()*0.001+Math.random()*6))*15; vy=25+Math.random()*35; size=2+Math.random()*3; life=3.5+Math.random()*2.0; color='rgba(240,248,255,0.9)'; break;
+    case 'poop':
+      if(finger==null){ x=Math.random()*W; y=-30; }
+      vx=(Math.random()*2-1)*10; vy=60+Math.random()*60; size=22+Math.random()*10; life=2.2+Math.random()*1.8; spin=(Math.random()*2-1)*1.2; emoji='💩'; break;
+  }
+  fxParticles.push({type:type,x:x,y:y,vx:vx,vy:vy,size:size,life:life,maxLife:life,rot:rot,spin:spin,color:color,emoji:emoji,finger:finger});
+}
 
-    /*** ===== CONFIG / FX ===== ***/
-    let config = {
-      effect:'glow', primaryColor:'#7ae0ff', accentColor:'#ff7ae0', intensity:1.0,
-      sparkles:[], confettis:[], stars:[],
-      lightningActive:false, lightningTimer:0, pulsePhase:0, rainbowOffset:0
+function fxUpdate(dt){
+  const base={hearts:16,stars:22,sparkles:30,snow:14,poop:6};
+  const enabled=[]; ['hearts','stars','sparkles','snow','poop'].forEach(function(k){ if(fx[k]) enabled.push(k); });
+  for(let ei=0;ei<enabled.length;ei++){ const k=enabled[ei]; const rate=base[k]*fx.density; const count=rate*dt; const n=Math.floor(count); for(let i=0;i<n;i++) fxSpawn(k); if(Math.random()<count-n) fxSpawn(k); }
+  const W=vcan.width, H=vcan.height; const keep=[];
+  for(let pi=0;pi<fxParticles.length;pi++){ const p=fxParticles[pi]; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.spin*dt; p.life-=dt; if(p.y<-60||p.y>H+60||p.x<-60||p.x>W+60||p.life<=0) continue; keep.push(p); }
+  const CAP=320; if(keep.length>CAP) keep.splice(0, keep.length-CAP);
+  fxParticles=keep;
+}
+
+function drawStar(ctx, r){ ctx.beginPath(); for(let i=0;i<5;i++){ const a=(i*72-90)*Math.PI/180; const ax=Math.cos(a)*r, ay=Math.sin(a)*r; const b=(i*72-90+36)*Math.PI/180; const bx=Math.cos(b)*r*0.5, by=Math.sin(b)*r*0.5; if(i===0) ctx.moveTo(ax,ay); else ctx.lineTo(ax,ay); ctx.lineTo(bx,by); } ctx.closePath(); }
+
+function fxRender(){
+  if(!fxParticles.length) return;
+  vctx.save();
+  for(let i=0;i<fxParticles.length;i++){
+    const p=fxParticles[i];
+    const n = (fx.clipToNails && p.finger!=null && nailCache)? nailCache[p.finger]: null;
+    if(n){ vctx.save(); vctx.clip(n.path); }
+    vctx.translate(p.x,p.y); vctx.rotate(p.rot);
+    if(p.emoji){
+      vctx.font=Math.round(p.size)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji";
+      vctx.textAlign='center'; vctx.textBaseline='middle'; vctx.fillText(p.emoji,0,0);
+    } else {
+      if(p.type==='stars'){
+        vctx.fillStyle=p.color; drawStar(vctx,p.size); vctx.fill();
+      } else if(p.type==='sparkles' || p.type==='snow'){
+        vctx.fillStyle=p.color; vctx.beginPath(); vctx.arc(0,0,p.size,0,Math.PI*2); vctx.fill();
+      } else if(p.type==='hearts'){
+        vctx.font=Math.round(p.size)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji";
+        vctx.textAlign='center'; vctx.textBaseline='middle'; vctx.fillText('❤️',0,0);
+      }
+    }
+    vctx.setTransform(1,0,0,1,0,0);
+    if(n) vctx.restore();
+  }
+  vctx.restore();
+}
+
+/* ======== КОЛЬЦО: состояние/рендер/загрузка ======== */
+let rings=[], ringActiveId=null;
+let ringAuto=true, ringScale=1.0, ringOffU=0, ringOffV=8, ringRot=0; // смещение по умолчанию чуть к кончику
+
+function omitKeys(obj, keys){ var out={}, k; for(k in obj){ if(Object.prototype.hasOwnProperty.call(obj,k) && keys.indexOf(k)===-1){ out[k]=obj[k]; } } return out; }
+
+function persistRing(){ try{ localStorage.setItem('ringPrefs', JSON.stringify({ringAuto:ringAuto,ringScale:ringScale,ringOffU:ringOffU,ringOffV:ringOffV,ringRot:ringRot,ringActiveId:ringActiveId})); var arr=[]; for(var i=0;i<rings.length;i++){ arr.push(omitKeys(rings[i], ['_img'])); } localStorage.setItem('ringAssets', JSON.stringify(arr)); }catch(e){} }
+function restoreRing(){ try{ var p=JSON.parse(localStorage.getItem('ringPrefs')||'null'); if(p){ ringAuto=!!p.ringAuto; ringScale=+p.ringScale||1; ringOffU=+p.ringOffU||0; ringOffV=+p.ringOffV||8; ringRot=+p.ringRot||0; ringActiveId=p.ringActiveId||null; } var arr=JSON.parse(localStorage.getItem('ringAssets')||'[]'); rings=Array.isArray(arr)?arr:[]; for(var i=0;i<rings.length;i++){ hydrateRingImage(rings[i]); } }catch(e){} }
+restoreRing();
+
+function hydrateRingImage(r){ if(r._img) return; const im=new Image(); im.crossOrigin='anonymous'; im.onload=function(){ r._img=im; updateRingsGrid(); }; im.onerror=function(){ r._img=null; }; im.src=r.imgSrc; r._img=im; }
+
+function setActiveRing(id){ ringActiveId=id; updateRingsGrid(); persistRing(); }
+
+function updateRingsGrid(){ const grid=document.getElementById('ringsGrid'); if(!grid) return; grid.innerHTML=''; for(var i=0;i<rings.length;i++){ var r=rings[i]; const div=document.createElement('div'); div.className='ringItem'+(r.id===ringActiveId?' active':''); const img=document.createElement('img'); img.src=r.imgSrc; img.alt='ring'; div.appendChild(img); div.onclick=function(id){ return function(){ setActiveRing(id); }; }(r.id); grid.appendChild(div); } }
+updateRingsGrid();
+
+function getRingPose(lm){ // используем 13 (MCP) и 14 (PIP) безымянного
+  const p13=LtoP(lm[13]); const p14=LtoP(lm[14]);
+  const vx=p14.x-p13.x, vy=p14.y-p13.y; const len=Math.hypot(vx,vy)||1;
+  const ux=-vy/len, uy=vx/len; // поперёк пальца
+  const center={ x: p13.x + vx*0.35, y: p13.y + vy*0.35 }; // чуть выше базы
+  const baseSize=len*1.2; // базовый размер от длины фаланги MCP-PIP
+  const angle=Math.atan2(vy,vx);
+  return {center:center, ux:ux, uy:uy, vxn:vx/len, vyn:vy/len, baseSize:baseSize, angle:angle};
+}
+
+function drawAutoRing(lm){ if(!ringAuto || !isLeft || !rings.length) return; const active=(function(){ for(var i=0;i<rings.length;i++){ if(rings[i].id===ringActiveId) return rings[i]; } return rings[0]; })(); if(!active || !active._img || !active._img.complete) return; const pose=getRingPose(lm); const cx=pose.center.x + pose.ux*ringOffU + pose.vxn*ringOffV; const cy=pose.center.y + pose.uy*ringOffU + pose.vyn*ringOffV; const k= ringScale * (pose.baseSize / Math.max(active.w||1, active.h||1)); const w=(active.w||100)*k, h=(active.h||100)*k; vctx.save(); vctx.translate(cx,cy); vctx.rotate(pose.angle + ringRot); vctx.drawImage(active._img, -w/2, -h/2, w, h); vctx.restore(); }
+
+/* ======== FPS & основной цикл ======== */
+let last=performance.now(), frameCount=0, fpsSm=0;
+const fpsEl=document.getElementById('fps');
+async function loop(){ const now=performance.now(), dt=(now-last)/1000; last=now; frameCount++; if(frameCount%10===0){const fps=1/dt; fpsSm=fpsSm?fpsSm*0.8+fps*0.2:fps; fpsEl.textContent='FPS: '+Math.round(fpsSm);} fxUpdate(dt); if(video.readyState>=2) await hands.send({image:video}); requestAnimationFrame(loop); }
+
+/* ======== снимки/шаринг + экспорт наклеек на прозрачном ======== */
+let lastShotUrl=null; const downloads=document.getElementById('downloads'), btnShot=document.getElementById('btnShot'), btnShare=document.getElementById('btnShare');
+btnShot.onclick=function(){const out=document.createElement('canvas');out.width=vcan.width;out.height=vcan.height;const g=out.getContext('2d');g.drawImage(vcan,0,0);lastShotUrl=out.toDataURL('image/png');const a=document.createElement('a');a.href=lastShotUrl;a.download='nails.png';a.textContent='Скачать снимок';downloads.prepend(a);btnShare.disabled=false;};
+let lpTimer=null; const startLP=function(){clearTimeout(lpTimer);lpTimer=setTimeout(function(){ exportOverlayPNG(); }, 600)}; const stopLP=function(){clearTimeout(lpTimer)};
+btnShot.addEventListener('touchstart', startLP, {passive:true}); btnShot.addEventListener('touchend', stopLP); btnShot.addEventListener('mousedown', startLP); btnShot.addEventListener('mouseup', stopLP); btnShot.addEventListener('mouseleave', stopLP);
+
+btnShare.onclick=async function(){if(!lastShotUrl)return;const blob=await(await fetch(lastShotUrl)).blob();const file=new File([blob],'nails.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]}))await navigator.share({files:[file],title:'Маникюр'});else{const a=document.createElement('a');a.href=lastShotUrl;a.download='nails.png';a.click();}};
+
+function exportOverlayPNG(){ if(!nailCache){ showHint('Покажи руку — и ещё раз'); return; }
+  const out=document.createElement('canvas'); out.width=vcan.width; out.height=vcan.height; const ctx=out.getContext('2d');
+  // ногти
+  for(var i=0;i<nailCache.length;i++){
+    var n=nailCache[i];
+    ctx.save(); ctx.shadowColor='rgba(0,0,0,0.45)'; ctx.shadowBlur=4; ctx.lineWidth=3; ctx.strokeStyle='rgba(0,0,0,0.45)'; ctx.stroke(n.path); ctx.restore();
+    ctx.fillStyle=hex2rgba(nailColor,0.9); ctx.fill(n.path);
+    if(gloss){
+      const aStartX=n.center.x - n.ux*n.width*0.4, aStartY=n.center.y - n.uy*n.width*0.4;
+      const aStopX =n.center.x + n.ux*n.width*0.4, aStopY =n.center.y + n.uy*n.width*0.4;
+      const grad=ctx.createLinearGradient(aStartX,aStartY,aStopX,aStopY);
+      grad.addColorStop(0.15,'rgba(255,255,255,0.35)'); grad.addColorStop(0.45,'rgba(255,255,255,0.06)'); grad.addColorStop(1,'transparent');
+      ctx.save(); ctx.globalCompositeOperation='lighter'; ctx.fillStyle=grad; ctx.fill(n.path); ctx.restore();
+    }
+    ctx.save(); ctx.lineWidth=1.2; ctx.strokeStyle='rgba(255,255,255,0.92)'; ctx.stroke(n.path); ctx.restore();
+  }
+  // блёстки
+  if(glitterOn){ const t=performance.now()/1000; ctx.save(); ctx.globalCompositeOperation='lighter'; for(var gi=0;gi<nailCache.length;gi++){ var n2=nailCache[gi]; ctx.save(); ctx.clip(n2.path); const count=Math.max(4, Math.round(n2.width*glitterDensity*0.6)); for(let i=0;i<count;i++){ const u=(prand(i*1.73+gi*2.1+t*0.35)*2-1)*n2.width*0.45; const v=(prand(i*2.91+gi*3.7-t*0.22)*2-1)*n2.width*0.22; const x=n2.center.x+n2.ux*u+n2.vx*v; const y=n2.center.y+n2.uy*u+n2.vy*v; const tw=prand(i*8.3+t*4.7); const r=0.6+1.8*tw; ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fillStyle='rgba(255,255,255,0.8)'; ctx.fill(); } ctx.restore(); } ctx.restore(); }
+  // стикеры
+  for(var si=0;si<stickers.length;si++){
+    var s=stickers[si]; const p=currentStickerPos(s); const n=p.n; ctx.save(); if(s.clip && n){ ctx.save(); ctx.clip(n.path); } ctx.translate(p.x,p.y); ctx.rotate(p.angle); if(s.type==='emoji'){ const size = Math.max(18, p.baseSize) * (s.scale||1); ctx.font=Math.round(size)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji"; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(s.emoji,0,0); } else if(s.type==='img' && s._img){ const k = (s.scale||1) * (p.baseSize / Math.max(s.w, s.h)); const w = s.w*k, h = s.h*k; ctx.drawImage(s._img, -w/2, -h/2, w, h); } ctx.restore(); if(s.clip && n){ ctx.restore(); } }
+  // FX
+  for(var fp=0;fp<fxParticles.length;fp++){
+    var p2=fxParticles[fp]; ctx.save(); ctx.translate(p2.x,p2.y); ctx.rotate(p2.rot||0); if(p2.emoji){ ctx.font=Math.round(p2.size)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji"; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(p2.emoji,0,0); } else if(p2.type==='stars'){ ctx.fillStyle='rgba(255,255,180,0.95)'; drawStar(ctx,p2.size); ctx.fill(); } else { ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(0,0,p2.size,0,Math.PI*2); ctx.fill(); } ctx.restore(); }
+  // Кольцо (если нужно вывести отдельно — можно добавить опцию)
+  if(latestLandmarks && ringAuto && rings.length){ const r=rings[(function(){ for(var i=0;i<rings.length;i++){ if(rings[i].id===ringActiveId) return i; } return 0; })()]; if(r && r._img){ const pose=getRingPose(latestLandmarks); const cx=pose.center.x + pose.ux*ringOffU + pose.vxn*ringOffV; const cy=pose.center.y + pose.uy*ringOffU + pose.vyn*ringOffV; const k= ringScale * (pose.baseSize / Math.max(r.w||1, r.h||1)); const w=(r.w||100)*k, h=(r.h||100)*k; ctx.save(); ctx.translate(cx,cy); ctx.rotate(pose.angle + ringRot); ctx.drawImage(r._img, -w/2, -h/2, w, h); ctx.restore(); } }
+
+  const url=out.toDataURL('image/png'); const a=document.createElement('a'); a.href=url; a.download='nail-design.png'; a.textContent='Скачать дизайн (PNG, прозрачный)'; downloads.prepend(a); showHint('Экспорт дизайна готов');
+}
+
+/* ======== Freeze/панель/подсказки ======== */
+const btnFreeze=document.getElementById('btnFreeze');
+btnFreeze.onclick=function(){frozenLandmarks=frozenLandmarks?null:(latestLandmarks?JSON.parse(JSON.stringify(latestLandmarks)):null);btnFreeze.classList.toggle('active',!!frozenLandmarks)};
+const bar=document.getElementById('bar'); let lastTap=0;
+stage.addEventListener('touchend',function(){const t=Date.now();if(t-lastTap<350){bar.classList.toggle('hidden');bar.style.transform=bar.classList.contains('hidden')?'translateY(120%)':'translateY(0)';}lastTap=t;},{passive:true});
+function showHint(text){const el=document.getElementById('hint');el.textContent=text||'';el.style.display=text?'block':'none';if(text)setTimeout(function(){el.style.display='none'},2200);}  
+
+/* ======== Модалки ======== */
+function openModal(id){document.querySelector(id).classList.add('show');}
+function closeModal(id){document.querySelector(id).classList.remove('show');}
+document.getElementById('btnSettings').onclick=function(){openModal('#modalNails')};
+document.getElementById('btnStickers').onclick=function(){openModal('#modalStk')};
+document.getElementById('btnFx').onclick=function(){ syncFxUI(); openModal('#modalFx'); };
+document.getElementById('btnRings').onclick=function(){ syncRingUI(); openModal('#modalRing'); };
+var closers=document.querySelectorAll('.scrim,[data-close]'); for(var ci=0;ci<closers.length;ci++){ closers[ci].addEventListener('click',function(){['#modalNails','#modalStk','#modalUpload','#modalFx','#modalRing'].forEach(closeModal);}); }
+
+/* ======== Ногти UI ======== */
+const glossOn=document.getElementById('glossOn'), glossOff=document.getElementById('glossOff');
+function updateGlossUI(){glossOn.classList.toggle('active',gloss);glossOff.classList.toggle('active',!gloss);} updateGlossUI();
+glossOn.onclick=function(){gloss=true;updateGlossUI();persist();}; glossOff.onclick=function(){gloss=false;updateGlossUI();persist();};
+const shapeButtons=[].slice.call(document.querySelectorAll('[data-shape]'));
+function updateShapeUI(){for(var i=0;i<shapeButtons.length;i++){ var b=shapeButtons[i]; b.classList.toggle('active',b.dataset.shape===shape);} } updateShapeUI();
+for(var sbi=0;sbi<shapeButtons.length;sbi++){ shapeButtons[sbi].onclick=function(){ shape=this.dataset.shape; updateShapeUI(); persist(); }; }
+const widthRange=document.getElementById('widthRange'); widthRange.oninput=function(e){widthK=parseFloat(e.target.value)}; widthRange.onchange=persist;
+const colorPicker=document.getElementById('colorPicker'); colorPicker.oninput=function(e){nailColor=e.target.value}; colorPicker.onchange=persist;
+
+// glitter controls
+const glitterOnBtn=document.getElementById('glitterOnBtn');
+const glitterOffBtn=document.getElementById('glitterOffBtn');
+const glitterRange=document.getElementById('glitterRange');
+const syncGlitter=function(){glitterOnBtn.classList.toggle('active',glitterOn);glitterOffBtn.classList.toggle('active',!glitterOn);glitterRange.value=String(glitterDensity)};
+syncGlitter();
+glitterOnBtn.onclick=function(){glitterOn=true;syncGlitter();persist();};
+glitterOffBtn.onclick=function(){glitterOn=false;syncGlitter();persist();};
+glitterRange.oninput=function(e){glitterDensity=+e.target.value}; glitterRange.onchange=persist;
+
+/* ======== FX UI ======== */
+const fxHearts=document.getElementById('fxHearts');
+const fxStars=document.getElementById('fxStars');
+const fxSpark=document.getElementById('fxSpark');
+const fxSnow=document.getElementById('fxSnow');
+const fxPoop=document.getElementById('fxPoop');
+const fxDensity=document.getElementById('fxDensity');
+const fxClip=document.getElementById('fxClip');
+function syncFxUI(){ fxHearts.classList.toggle('active',fx.hearts); fxStars.classList.toggle('active',fx.stars); fxSpark.classList.toggle('active',fx.sparkles); fxSnow.classList.toggle('active',fx.snow); fxPoop.classList.toggle('active',fx.poop); fxDensity.value=String(fx.density); fxClip.checked=!!fx.clipToNails; }
+fxHearts.onclick=function(){fx.hearts=!fx.hearts;fxHearts.classList.toggle('active',fx.hearts);persistFx();};
+fxStars.onclick=function(){fx.stars=!fx.stars;fxStars.classList.toggle('active',fx.stars);persistFx();};
+fxSpark.onclick=function(){fx.sparkles=!fx.sparkles;fxSpark.classList.toggle('active',fx.sparkles);persistFx();};
+fxSnow.onclick=function(){fx.snow=!fx.snow;fxSnow.classList.toggle('active',fx.snow);persistFx();};
+fxPoop.onclick=function(){fx.poop=!fx.poop;fxPoop.classList.toggle('active',fx.poop);persistFx();};
+fxDensity.oninput=function(e){fx.density=+e.target.value}; fxDensity.onchange=persistFx;
+fxClip.onchange=function(e){fx.clipToNails=e.target.checked; persistFx();};
+
+/* ======== Стикеры ======== */
+let stickers=[], selectedId=null, attachToNail=true;
+const STICKER_SET=['💩','❤️','💖','💗','💘','⭐','✨','🌟','💅','🎀','🌸','🦋','💎','🔥','🩷','💜','💚','💛','🖤'];
+const stkGrid=document.getElementById('stkGrid');
+function buildStickersPalette(){stkGrid.innerHTML='';for(var i=0;i<STICKER_SET.length;i++){var e=STICKER_SET[i];const b=document.createElement('button');b.className='stk';b.textContent=e;b.onclick=function(emoji){return function(){addEmojiOnNearestNail(emoji)}}(e);stkGrid.appendChild(b);} }
+buildStickersPalette();
+
+const stkAttachOn=document.getElementById('stkAttachOn'), stkAttachOff=document.getElementById('stkAttachOff');
+function updateAttachUI(){stkAttachOn.classList.toggle('active',attachToNail);stkAttachOff.classList.toggle('active',!attachToNail);} updateAttachUI();
+stkAttachOn.onclick=function(){attachToNail=true;updateAttachUI();persistStickers();};
+stkAttachOff.onclick=function(){attachToNail=false;updateAttachUI();persistStickers();};
+
+document.getElementById('stkDeleteAll').onclick=function(){stickers=[];selectedId=null;ringVis.style.display='none';persistStickers();};
+document.getElementById('stkDeleteSel').onclick=function(){if(!selectedId)return;stickers=stickers.filter(function(s){return s.id!==selectedId});selectedId=null;ringVis.style.display='none';persistStickers();};
+const btnDownloadSel=document.getElementById('stkDownloadSel');
+btnDownloadSel.onclick=function(){
+  if(!selectedId){ showHint('Выбери стикер'); return; }
+  const s=(function(){ for(var i=0;i<stickers.length;i++){ if(stickers[i].id===selectedId) return stickers[i]; } return null; })(); if(!s) return;
+  if(s.type==='img'){
+    const a=document.createElement('a'); a.href=s.imgSrc; a.download='sticker.png'; a.click();
+  } else {
+    const size=512; const cnv=document.createElement('canvas'); cnv.width=size; cnv.height=size; const ctx=cnv.getContext('2d');
+    ctx.font=Math.round(size*0.8)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji";
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(s.emoji,size/2,size/2);
+    const a=document.createElement('a'); a.href=cnv.toDataURL('image/png'); a.download='sticker-emoji.png'; a.click();
+  }
+};
+
+document.getElementById('btnCustomSticker').onclick=function(){openModal('#modalUpload')};
+
+document.getElementById('btnPoop').addEventListener('click',function(){addEmojiOnNearestNail('💩')});
+
+// На все ногти — общая настройка
+const addToAllEl = document.getElementById('addToAll');
+const addToAllStk = document.getElementById('addToAllStk');
+let addToAll = true;
+function setAddToAll(v){ addToAll = !!v; if(addToAllEl) addToAllEl.checked = v; if(addToAllStk) addToAllStk.checked = v; localStorage.setItem('addToAll', JSON.stringify(v)); }
+[addToAllEl, addToAllStk].forEach(function(el){ if(el) el.addEventListener('change', function(e){ setAddToAll(e.target.checked) }); });
+
+/* ======== выбор ногтя тапом ======== */
+let selectedFinger=null;
+const fingerRing=document.getElementById('fingerRing');
+function selectFingerAt(x,y){ if(!nailCache) return; let idxHit=null; for(let i=0;i<nailCache.length;i++){ if(vctx.isPointInPath(nailCache[i].path,x,y)){ idxHit=i; break; } }
+  if(idxHit==null){ let best=0,bd=Infinity; for(let i=0;i<nailCache.length;i++){ const n=nailCache[i]; const d=Math.hypot(n.center.x-x,n.center.y-y); if(d<bd){bd=d;best=i;} } idxHit=best; }
+  selectedFinger=idxHit; const n=nailCache[idxHit]; const rect=vcan.getBoundingClientRect(); const cx=rect.left+n.center.x*(rect.width/vcan.width); const cy=rect.top+n.center.y*(rect.height/vcan.height);
+  const r=Math.max(22, n.width*0.5*(rect.width/vcan.width)); fingerRing.style.width=fingerRing.style.height=(r*2)+'px'; fingerRing.style.marginLeft=(-r)+'px'; fingerRing.style.marginTop=(-r)+'px'; fingerRing.style.transform='translate('+cx+'px,'+cy+'px)'; fingerRing.style.display='block'; setTimeout(function(){fingerRing.style.display='none';},1200); showHint('Выбрала ноготь #' + (idxHit+1)); }
+
+let tapCandidate=null;
+stage.addEventListener('touchstart',function(e){ e.preventDefault(); const t=e.changedTouches[0]; const p=canvasPointFromTouch(t); const hit=findStickerAt(p.x,p.y); if(!hit){ tapCandidate={id:t.identifier,t:Date.now(),x:p.x,y:p.y}; } else { tapCandidate=null; } },{passive:false});
+stage.addEventListener('touchmove',function(e){ e.preventDefault(); if(tapCandidate){ const t=e.changedTouches[0]; const p=canvasPointFromTouch(t); if(Math.hypot(p.x-tapCandidate.x,p.y-tapCandidate.y)>15){ tapCandidate=null; } } },{passive:false});
+stage.addEventListener('touchend',function(e){ e.preventDefault(); if(tapCandidate){ const t=e.changedTouches[0]; if(!t) return; if(Date.now()-tapCandidate.t<280){ const p=canvasPointFromTouch(t); selectFingerAt(p.x,p.y); } tapCandidate=null; } },{passive:false});
+
+/* ======== добавление стикеров ======== */
+function chooseNearestFingerCenter(){
+  if(!nailCache) return {idx:null, cx:vcan.width/2, cy:vcan.height/2};
+  const cx=vcan.width/2, cy=vcan.height/2; let best=0,bd=Infinity;
+  for(let i=0;i<nailCache.length;i++){ const n=nailCache[i]; const d=Math.hypot(n.center.x-cx,n.center.y-cy); if(d<bd){bd=d;best=i;} }
+  const n=nailCache[best]; return {idx:best, cx:n.center.x, cy:n.center.y};
+}
+
+function addEmojiStickerToFinger(emoji, fingerIndex){
+  const id='s'+Math.random().toString(36).slice(2,9);
+  const s={id:id,type:'emoji',emoji:emoji,anchorFinger:fingerIndex,offU:0,offV:0,scale:1,rot:0,clip:true};
+  stickers.push(s); selectedId=id; updateRingPosition(s);
+}
+function addImageStickerToFinger(imgSrc,w,h,fingerIndex){
+  const id='s'+Math.random().toString(36).slice(2,9);
+  const s={id:id,type:'img',imgSrc:imgSrc,w:w,h:h,anchorFinger:fingerIndex,offU:0,offV:0,scale:1,rot:0,clip:true};
+  stickers.push(s); hydrateStickerImage(s); selectedId=id; updateRingPosition(s);
+}
+
+function addEmojiOnNearestNail(emoji){
+  if(addToAll && nailCache && nailCache.length){ for(let i=0;i<nailCache.length;i++){ addEmojiStickerToFinger(emoji, i); } persistStickers(); closeModal('#modalStk'); showHint('Эмодзи на всех ногтях'); return; }
+  const id='s'+Math.random().toString(36).slice(2,9);
+  let anchorFinger=null, offU=0, offV=0; let x=vcan.width/2, y=vcan.height/2;
+  if(attachToNail && nailCache){ if(selectedFinger!=null){ anchorFinger=selectedFinger; const n=nailCache[anchorFinger]; x=n.center.x; y=n.center.y; } else { const pick=chooseNearestFingerCenter(); anchorFinger=pick.idx; x=pick.cx; y=pick.cy; } }
+  const s={id:id,type:'emoji',emoji:emoji,anchorFinger:anchorFinger,offU:offU,offV:offV,scale:1,rot:0,clip:true}; if(anchorFinger==null){ s.x=x; s.y=y; }
+  stickers.push(s); selectedId=id; updateRingPosition(s); persistStickers(); closeModal('#modalStk');
+}
+
+function addImageSticker(imgSrc,w,h){
+  if(addToAll && nailCache && nailCache.length){ for(let i=0;i<nailCache.length;i++){ addImageStickerToFinger(imgSrc,w,h,i); } persistStickers(); closeModal('#modalUpload'); closeModal('#modalStk'); showHint('Стикер добавлен на все ногти'); return; }
+  const id='s'+Math.random().toString(36).slice(2,9);
+  let anchorFinger=null, offU=0, offV=0; let x=vcan.width/2, y=vcan.height/2;
+  if(attachToNail && nailCache){ if(selectedFinger!=null){ anchorFinger=selectedFinger; const n=nailCache[anchorFinger]; x=n.center.x; y=n.center.y; } else { const pick=chooseNearestFingerCenter(); anchorFinger=pick.idx; x=pick.cx; y=pick.cy; } }
+  const s={id:id,type:'img',imgSrc:imgSrc,w:w,h:h,anchorFinger:anchorFinger,offU:offU,offV:offV,scale:1,rot:0,clip:true}; if(anchorFinger==null){ s.x=x; s.y=y; }
+  stickers.push(s); selectedId=id; hydrateStickerImage(s); updateRingPosition(s); persistStickers(); closeModal('#modalUpload'); closeModal('#modalStk');
+}
+
+function hydrateStickerImage(s){ if(s.type!=='img') return; if(s._img) return; const im=new Image(); im.onload=function(){ s._img=im; }; im.src=s.imgSrc; s._img=im; }
+function currentStickerPos(s){
+  if(s.anchorFinger==null || !nailCache) return {x:s.x||0,y:s.y||0, angle:s.rot||0, baseSize:96};
+  const n=nailCache[s.anchorFinger]; const x = n.center.x + n.ux*(s.offU||0) + n.vx*(s.offV||0); const y = n.center.y + n.uy*(s.offU||0) + n.vy*(s.offV||0); const baseSize = n.width * 0.55; const angle = (s.rot||0); return {x:x,y:y,angle:angle,baseSize:baseSize,n:n};
+}
+function drawStickers(){
+  for(var i=0;i<stickers.length;i++){
+    var s=stickers[i];
+    const pos=currentStickerPos(s); const x=pos.x, y=pos.y, angle=pos.angle, baseSize=pos.baseSize, n=pos.n;
+    vctx.save(); if(s.clip && n){ vctx.save(); vctx.clip(n.path); }
+    vctx.translate(x,y); vctx.rotate(angle);
+    if(s.type==='emoji'){
+      const size = Math.max(18, baseSize) * (s.scale||1);
+      vctx.font=Math.round(size)+"px system-ui, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji";
+      vctx.textAlign='center'; vctx.textBaseline='middle'; vctx.fillText(s.emoji,0,0);
+    } else if(s.type==='img'){
+      hydrateStickerImage(s); if(s._img && s._img.complete){ const k = (s.scale||1) * (baseSize / Math.max(s.w, s.h)); const w = s.w * k, h = s.h * k; vctx.drawImage(s._img, -w/2, -h/2, w, h); }
+    }
+    vctx.restore(); if(s.clip && n){ vctx.restore(); }
+  }
+}
+
+/* ======== жесты для стикеров ======== */
+function canvasPointFromTouch(t){const r=vcan.getBoundingClientRect();return{x:(t.clientX-r.left)*(vcan.width/r.width),y:(t.clientY-r.top)*(vcan.height/r.height)}}
+function dist(ax,ay,bx,by){const dx=ax-bx,dy=ay-by;return Math.hypot(dx,dy);} 
+function findStickerAt(x,y){ for(let i=stickers.length-1;i>=0;i--){ const s=stickers[i]; const p=currentStickerPos(s); const R= Math.max(22, (p.baseSize||40)*0.45*(s.scale||1)); if(dist(x,y,p.x,p.y)<=R) return s; } return null; }
+function selectSticker(s){selectedId=s?s.id:null;if(s){updateRingPosition(s);ringVis.style.display='block';}else{ringVis.style.display='none';}}
+function updateRingPosition(s){const p=currentStickerPos(s); const r=Math.max(24,(p.baseSize||40)*0.5*(s.scale||1)); ringVis.style.width=ringVis.style.height=(r*2)+'px'; ringVis.style.marginLeft=(-r)+'px'; ringVis.style.marginTop=(-r)+'px'; const rect=vcan.getBoundingClientRect(); const cx=rect.left+p.x*(rect.width/vcan.width); const cy=rect.top+p.y*(rect.height/vcan.height); ringVis.style.transform='translate('+cx+'px,'+cy+'px)';}
+
+let touches=new Map(), longPressTimer=null, gesture=null;
+stage.addEventListener('touchstart',function(e){
+  e.preventDefault();
+  for(let i=0;i<e.changedTouches.length;i++){ var t=e.changedTouches[i]; touches.set(t.identifier,canvasPointFromTouch(t)); }
+  if(touches.size===1){
+    const p=[].concat(Array.from(touches.values()))[0]; const hit=findStickerAt(p.x,p.y);
+    if(hit){
+      selectSticker(hit);
+      const pos=currentStickerPos(hit);
+      gesture={mode:'drag',id:[].concat(Array.from(touches.keys()))[0],startX:p.x,startY:p.y};
+      gesture.s=hit; gesture.offU0=hit.offU||0; gesture.offV0=hit.offV||0; gesture.x0=hit.x||pos.x; gesture.y0=hit.y||pos.y;
+      const n = nailCache && hit.anchorFinger!=null ? nailCache[hit.anchorFinger] : null;
+      gesture.ux=n?n.ux:1; gesture.uy=n?n.uy:0; gesture.vx=n?n.vx:0; gesture.vy=n?n.vy:1;
+      clearTimeout(longPressTimer); longPressTimer=setTimeout(function(){if(selectedId===hit.id){stickers=stickers.filter(function(s){return s.id!==hit.id});selectSticker(null);persistStickers();}},700);
+    } else {selectSticker(null);gesture=null;}
+  } else if(touches.size===2 && selectedId){
+    clearTimeout(longPressTimer);
+    const s=(function(){ for(var i=0;i<stickers.length;i++){ if(stickers[i].id===selectedId) return stickers[i]; } return null; })(); if(!s)return; const pts=[].concat(Array.from(touches.values()));
+    const a0=Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x); const d0=dist(pts[0].x,pts[0].y,pts[1].x,pts[1].y);
+    gesture={mode:'pinch',a0:a0,d0:d0,rot0:s.rot||0,sc0:s.scale||1};
+  }
+},{passive:false});
+
+stage.addEventListener('touchmove',function(e){
+  e.preventDefault();
+  for(let i=0;i<e.changedTouches.length;i++){ var t=e.changedTouches[i]; touches.set(t.identifier,canvasPointFromTouch(t)); }
+  if(!selectedId) return; const s=(function(){ for(var i=0;i<stickers.length;i++){ if(stickers[i].id===selectedId) return stickers[i]; } return null; })(); if(!s) return;
+  if(gesture && gesture.mode==='drag'){
+    const p=touches.get(gesture.id); if(!p) return; const dx=p.x-gesture.startX, dy=p.y-gesture.startY;
+    if(s.anchorFinger!=null && nailCache){ // двигаем в локальных координатах ногтя
+      const dU = dx*gesture.ux + dy*gesture.uy;
+      const dV = dx*gesture.vx + dy*gesture.vy;
+      s.offU = gesture.offU0 + dU;
+      s.offV = gesture.offV0 + dV;
+    } else { s.x = gesture.x0 + dx; s.y = gesture.y0 + dy; }
+    updateRingPosition(s);
+  }
+  else if(gesture && gesture.mode==='pinch'){
+    const pts=[].concat(Array.from(touches.values())); if(pts.length<2) return; const a=Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x); const d=dist(pts[0].x,pts[0].y,pts[1].x,pts[1].y); s.rot=gesture.rot0+(a-gesture.a0); s.scale=Math.max(0.3,Math.min(3.0, gesture.sc0*(d/Math.max(20,gesture.d0)))); updateRingPosition(s);
+  }
+},{passive:false});
+
+stage.addEventListener('touchend',function(e){ e.preventDefault(); for(let i=0;i<e.changedTouches.length;i++){ var t=e.changedTouches[i]; touches.delete(t.identifier);} if(touches.size===0){clearTimeout(longPressTimer);gesture=null;persistStickers();} },{passive:false});
+
+/* ======== Сохранение общих настроек ======== */
+const defaultPrefs={autoAdjust:true,manualB:1,manualC:1,nailColor:'#f472b6',gloss:true,widthK:0.7,shape:'oval',nailsVisible:true,glitterOn:false,glitterDensity:0.7};
+function persist(){const prefs={autoAdjust:autoAdjust,manualB:manualB,manualC:manualC,nailColor:nailColor,gloss:gloss,widthK:widthK,shape:shape,nailsVisible:nailsVisible,glitterOn:glitterOn,glitterDensity:glitterDensity};try{localStorage.setItem('nailPrefs',JSON.stringify(prefs));}catch(e){}}
+function restore(){
+  var p; try{ p=JSON.parse(localStorage.getItem('nailPrefs')||'null'); }catch(e){ p=null; }
+  if(!p) p=defaultPrefs;
+  autoAdjust=!!p.autoAdjust; manualB=+p.manualB; manualC=+p.manualC; nailColor=p.nailColor; gloss=!!p.gloss; widthK=+p.widthK; shape=p.shape||'oval'; nailsVisible=('nailsVisible' in p)?!!p.nailsVisible:true; glitterOn=!!p.glitterOn; glitterDensity=+((('glitterDensity' in p && p.glitterDensity!=null)?p.glitterDensity:0.7));
+  document.getElementById('btnAuto').classList.toggle('active',autoAdjust);
+  widthRange.value=widthK; colorPicker.value=nailColor; syncGlitter(); updateGlossUI(); updateShapeUI();
+  try{ const v = JSON.parse(localStorage.getItem('addToAll')||'true'); setAddToAll(!!v); }catch(e){ setAddToAll(true); }
+}
+function safeForStore(arr){ var out=[]; for(var i=0;i<arr.length;i++){ out.push(omitKeys(arr[i], ['_img'])); } return out; }
+function persistStickers(){ try{ localStorage.setItem('nailStickers', JSON.stringify(safeForStore(stickers))); localStorage.setItem('nailAttach', JSON.stringify({attachToNail:attachToNail})); }catch(e){ console.warn('localStorage full?', e); } }
+function restoreStickers(){
+  try{ stickers=JSON.parse(localStorage.getItem('nailStickers')||'[]'); }catch(e){ stickers=[]; }
+  for(var i=0;i<stickers.length;i++){ var s=stickers[i]; if(s.type==='img') hydrateStickerImage(s); }
+  try{ var a=JSON.parse(localStorage.getItem('nailAttach')||'null'); if(a && typeof a.attachToNail==='boolean'){ attachToNail=a.attachToNail; updateAttachUI(); } }catch(e){}
+}
+restore(); restoreStickers(); updateRingsGrid();
+
+/* ======== Свой стикер: загрузка и вырез фона ======== */
+const srcPrev = document.getElementById('srcPreview');
+const cutPrev = document.getElementById('cutPreview');
+const upFile  = document.getElementById('uploadFile');
+const bgColorInput = document.getElementById('bgColor');
+const tolRange = document.getElementById('tolRange');
+const softRange = document.getElementById('softRange');
+const invertMask = document.getElementById('invertMask');
+const btnProcess = document.getElementById('btnProcess');
+const btnAddSticker = document.getElementById('btnAddSticker');
+const btnAutoBg = document.getElementById('btnAutoBg');
+const btnPickSample = document.getElementById('btnPickSample');
+
+document.getElementById('btnCustomSticker').addEventListener('click', function(){openModal('#modalUpload'); resetUploadState();});
+function resetUploadState(){ if(!srcPrev||!cutPrev) return; const ctx1=srcPrev.getContext('2d'); const ctx2=cutPrev.getContext('2d'); ctx1.clearRect(0,0,srcPrev.width,srcPrev.height); ctx2.clearRect(0,0,cutPrev.width,cutPrev.height); btnAddSticker.disabled=true; }
+
+let srcImg = null, srcW=0, srcH=0, cutDataUrl=null;
+
+upFile.onchange = function(e){ const f = e.target.files[0]; if(!f) return; const reader = new FileReader(); reader.onload = function() { const im = new Image(); im.onload = function() { const maxD = 512; const k = Math.min(1, maxD / Math.max(im.width, im.height)); srcW = Math.max(1, Math.round(im.width * k)); srcH = Math.max(1, Math.round(im.height * k)); const cnv = document.createElement('canvas'); cnv.width = srcW; cnv.height = srcH; const c = cnv.getContext('2d'); c.drawImage(im, 0, 0, srcW, srcH); srcImg = new Image(); srcImg.onload = function(){ drawSrcPreview(); }; srcImg.src = cnv.toDataURL('image/png'); autoBgFromCorners(cnv); }; im.src = reader.result; }; reader.readAsDataURL(f); };
+
+function drawSrcPreview(){ if(!srcImg||!srcPrev) return; const ctx = srcPrev.getContext('2d'); ctx.clearRect(0,0,srcPrev.width,srcPrev.height); const k = Math.min(srcPrev.width/srcW, srcPrev.height/srcH); const w = srcW*k, h = srcH*k; const x = (srcPrev.width - w)/2, y = (srcPrev.height - h)/2; ctx.drawImage(srcImg, x,y,w,h); }
+
+btnAutoBg.onclick = function(){ if(!srcImg) return; const cnv = document.createElement('canvas'); cnv.width=srcW; cnv.height=srcH; const c = cnv.getContext('2d'); c.drawImage(srcImg,0,0); autoBgFromCorners(cnv); };
+
+function autoBgFromCorners(cnv){ const c = cnv.getContext('2d'); const blk = 8; function avg(x0,y0){ const img = c.getImageData(x0,y0,blk,blk).data; let r=0,g=0,b=0,n=0; for(let i=0;i<img.length;i+=4){ r+=img[i]; g+=img[i+1]; b+=img[i+2]; n++; } return [Math.round(r/n),Math.round(g/n),Math.round(b/n)]; } const pts = [ avg(0,0), avg(cnv.width-blk,0), avg(0,cnv.height-blk), avg(cnv.width-blk,cnv.height-blk) ]; const r=Math.round((pts[0][0]+pts[1][0]+pts[2][0]+pts[3][0])/4); const g=Math.round((pts[0][1]+pts[1][1]+pts[2][1]+pts[3][1])/4); const b=Math.round((pts[0][2]+pts[1][2]+pts[2][2]+pts[3][2])/4); bgColorInput.value = '#' + [r,g,b].map(function(v){return v.toString(16).padStart(2,'0')}).join(''); }
+
+btnPickSample.onclick = function(){ if(!srcImg||!cutPrev) return; cutPrev.style.cursor = 'crosshair'; const once = function(e) { const rect = cutPrev.getBoundingClientRect(); const px = (e.clientX - rect.left) * (srcW / rect.width); const py = (e.clientY - rect.top)  * (srcH / rect.height); const cnv = document.createElement('canvas'); cnv.width=srcW; cnv.height=srcH; const c = cnv.getContext('2d'); c.drawImage(srcImg,0,0); const data = c.getImageData(Math.max(0,Math.floor(px)), Math.max(0,Math.floor(py)), 1, 1).data; bgColorInput.value = '#' + [data[0],data[1],data[2]].map(function(v){return v.toString(16).padStart(2,'0')}).join(''); cutPrev.removeEventListener('click', once); cutPrev.style.cursor = 'default'; }; cutPrev.addEventListener('click', once); };
+
+btnProcess.onclick = function(){ if(!srcImg) return; const out=removeBgOnClient(srcImg, srcW, srcH, hexToRgb(bgColorInput.value), +tolRange.value, +softRange.value, !!invertMask.checked); cutDataUrl = out.url; drawCutPreview(out.url, out.w, out.h); btnAddSticker.disabled = false; };
+btnAddSticker.onclick = function(){ if(!cutDataUrl) return; const tmp = new Image(); tmp.onload = function(){ if(addToAll && nailCache && nailCache.length){ for(let i=0;i<nailCache.length;i++){ addImageStickerToFinger(cutDataUrl, tmp.naturalWidth, tmp.naturalHeight, i); } persistStickers(); closeModal('#modalUpload'); closeModal('#modalStk'); showHint('Стикер добавлен на все ногти'); } else { addImageSticker(cutDataUrl, tmp.naturalWidth, tmp.naturalHeight); } }; tmp.crossOrigin='anonymous'; tmp.src = cutDataUrl; };
+
+function drawCutPreview(url, w, h){ if(!cutPrev) return; const ctx = cutPrev.getContext('2d'); ctx.clearRect(0,0,cutPrev.width,cutPrev.height); const img = new Image(); img.onload = function(){ const k = Math.min(cutPrev.width/w, cutPrev.height/h); const dw = w*k, dh = h*k; const x = (cutPrev.width-dw)/2, y = (cutPrev.height-dh)/2; ctx.drawImage(img, x,y,dw,dh); }; img.crossOrigin='anonymous'; img.src = url; }
+
+function hexToRgb(hex){ const v=hex.replace('#',''); return {r:parseInt(v.slice(0,2),16),g:parseInt(v.slice(2,4),16),b:parseInt(v.slice(4,6),16)}; }
+function smoothstep(e0,e1,x){ const t=Math.min(1,Math.max(0,(x-e0)/(e1-e0||1))); return t*t*(3-2*t); }
+function removeBgOnClient(image, w, h, bg, tol, soft, invert){ if(typeof tol==='undefined') tol=60; if(typeof soft==='undefined') soft=15; if(typeof invert==='undefined') invert=false; const src = document.createElement('canvas'); src.width=w; src.height=h; const c = src.getContext('2d'); try{ c.drawImage(image,0,0,w,h); }catch(e){ showHint('Источник без CORS — скачай файл и добавь из телефона'); return { url: image.src, w: (h ? w : 0), h: (h || 0) }; } const img = c.getImageData(0,0,w,h); const d = img.data; const tolLo = Math.max(0, tol - soft), tolHi = tol + soft; for(let i=0;i<d.length;i+=4){ const R=d[i], G=d[i+1], B=d[i+2], A=d[i+3]; const dist = Math.abs(R-bg.r)+Math.abs(G-bg.g)+Math.abs(B-bg.b); const nd = dist * (255/765); let alpha = Math.round(255 * smoothstep(tolLo, tolHi, nd)); if(invert) alpha = 255 - alpha; d[i+3] = Math.min(A, alpha); } c.putImageData(img,0,0); return { url: src.toDataURL('image/png'), w: w, h: h }; }
+
+/* ======== КОЛЬЦО: UI и загрузка ======== */
+const ringAutoBtn=document.getElementById('ringAutoBtn');
+const ringScaleEl=document.getElementById('ringScale');
+const ringOffUEl=document.getElementById('ringOffU');
+const ringOffVEl=document.getElementById('ringOffV');
+const ringRotEl=document.getElementById('ringRot');
+function syncRingUI(){ ringAutoBtn.classList.toggle('active',ringAuto); ringScaleEl.value=String(ringScale); ringOffUEl.value=String(ringOffU); ringOffVEl.value=String(ringOffV); ringRotEl.value=String(ringRot); updateRingsGrid(); }
+ringAutoBtn.onclick=function(){ ringAuto=!ringAuto; syncRingUI(); persistRing(); };
+ringScaleEl.oninput=function(e){ringScale=+e.target.value}; ringScaleEl.onchange=persistRing;
+ringOffUEl.oninput=function(e){ringOffU=+e.target.value}; ringOffUEl.onchange=persistRing;
+ringOffVEl.oninput=function(e){ringOffV=+e.target.value}; ringOffVEl.onchange=persistRing;
+ringRotEl.oninput=function(e){ringRot=+e.target.value}; ringRotEl.onchange=persistRing;
+
+// управление списком
+const ringDownload=document.getElementById('ringDownload');
+const ringDelete=document.getElementById('ringDelete');
+ringDownload.onclick=function(){ const r=(function(){ for(var i=0;i<rings.length;i++){ if(rings[i].id===ringActiveId) return rings[i]; } return null; })(); if(!r) return; const a=document.createElement('a'); a.href=r.imgSrc; a.download='ring.png'; a.click(); };
+ringDelete.onclick=function(){ if(!ringActiveId) return; rings=rings.filter(function(r){return r.id!==ringActiveId}); ringActiveId=(rings[0] && rings[0].id) || null; updateRingsGrid(); persistRing(); };
+
+// Загрузка из файла/URL
+const ringSrcPrev=document.getElementById('ringSrcPreview');
+const ringCutPrev=document.getElementById('ringCutPreview');
+const ringUploadFile=document.getElementById('ringUploadFile');
+const ringUrl=document.getElementById('ringUrl');
+const ringLoadUrl=document.getElementById('ringLoadUrl');
+const ringAutoBg=document.getElementById('ringAutoBg');
+const ringPickSample=document.getElementById('ringPickSample');
+const ringBgColor=document.getElementById('ringBgColor');
+const ringTol=document.getElementById('ringTol');
+const ringSoft=document.getElementById('ringSoft');
+const ringInvert=document.getElementById('ringInvertMask');
+const ringProcess=document.getElementById('ringProcess');
+const ringAdd=document.getElementById('ringAdd');
+
+let ringSrcImg=null, ringSW=0, ringSH=0, ringCutDataUrl=null;
+
+ringUploadFile.onchange=function(e){ const f=e.target.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=function(){ const im=new Image(); im.onload=function(){ const maxD=700; const k=Math.min(1, maxD/Math.max(im.width,im.height)); ringSW=Math.round(im.width*k); ringSH=Math.round(im.height*k); const cnv=document.createElement('canvas'); cnv.width=ringSW; cnv.height=ringSH; const c=cnv.getContext('2d'); c.drawImage(im,0,0,ringSW,ringSH); ringSrcImg=new Image(); ringSrcImg.onload=function(){drawRingSrcPrev();}; ringSrcImg.src=cnv.toDataURL('image/png'); autoBgFromCorners(cnv, true); }; im.src=rd.result; }; rd.readAsDataURL(f); };
+
+ringLoadUrl.onclick=function(){ const url=ringUrl.value.trim(); if(!url) return; const im=new Image(); im.crossOrigin='anonymous'; im.onload=function(){ const maxD=700; const k=Math.min(1, maxD/Math.max(im.width,im.height)); ringSW=Math.round(im.width*k); ringSH=Math.round(im.height*k); const cnv=document.createElement('canvas'); cnv.width=ringSW; cnv.height=ringSH; const c=cnv.getContext('2d'); c.drawImage(im,0,0,ringSW,ringSH); ringSrcImg=new Image(); ringSrcImg.onload=function(){drawRingSrcPrev();}; ringSrcImg.src=cnv.toDataURL('image/png'); autoBgFromCorners(cnv, true); }; im.onerror=function(){showHint('Не удалось загрузить по URL (CORS?)')}; im.src=url; };
+
+function drawRingSrcPrev(){ if(!ringSrcImg||!ringSrcPrev) return; const ctx=ringSrcPrev.getContext('2d'); ctx.clearRect(0,0,ringSrcPrev.width,ringSrcPrev.height); const k=Math.min(ringSrcPrev.width/ringSW, ringSrcPrev.height/ringSH); const w=ringSW*k, h=ringSH*k; const x=(ringSrcPrev.width-w)/2, y=(ringSrcPrev.height-h)/2; ctx.drawImage(ringSrcImg,x,y,w,h); }
+
+ringAutoBg.onclick=function(){ if(!ringSrcImg) return; const cnv=document.createElement('canvas'); cnv.width=ringSW; cnv.height=ringSH; const c=cnv.getContext('2d'); c.drawImage(ringSrcImg,0,0); autoBgFromCorners(cnv,true); };
+ringPickSample.onclick=function(){ if(!ringSrcImg||!ringCutPrev) return; ringCutPrev.style.cursor='crosshair'; const once=function(e){ const rect=ringCutPrev.getBoundingClientRect(); const px=(e.clientX-rect.left)*(ringSW/rect.width); const py=(e.clientY-rect.top)*(ringSH/rect.height); const cnv=document.createElement('canvas'); cnv.width=ringSW; cnv.height=ringSH; const c=cnv.getContext('2d'); c.drawImage(ringSrcImg,0,0); const data=c.getImageData(Math.max(0,Math.floor(px)), Math.max(0,Math.floor(py)), 1, 1).data; ringBgColor.value = '#' + [data[0],data[1],data[2]].map(function(v){return v.toString(16).padStart(2,'0')}).join(''); ringCutPrev.removeEventListener('click',once); ringCutPrev.style.cursor='default'; }; ringCutPrev.addEventListener('click',once); };
+
+ringProcess.onclick=function(){ if(!ringSrcImg) return; const out=removeBgOnClient(ringSrcImg, ringSW, ringSH, hexToRgb(ringBgColor.value), +ringTol.value, +ringSoft.value, (ringInvert && ringInvert.checked) || false); ringCutDataUrl=out.url; drawRingCutPrev(out.url,out.w,out.h); ringAdd.disabled=false; };
+ringAdd.onclick=function(){ if(!ringCutDataUrl) return; const tmp=new Image(); tmp.onload=function(){ const item={id:'r'+Math.random().toString(36).slice(2,9), imgSrc:ringCutDataUrl, w:tmp.naturalWidth, h:tmp.naturalHeight}; rings.push(item); hydrateRingImage(item); setActiveRing(item.id); persistRing(); showHint('Кольцо добавлено'); }; tmp.crossOrigin='anonymous'; tmp.src=ringCutDataUrl; };
+
+function drawRingCutPrev(url,w,h){ if(!ringCutPrev) return; const ctx=ringCutPrev.getContext('2d'); ctx.clearRect(0,0,ringCutPrev.width,ringCutPrev.height); const img=new Image(); img.onload=function(){ const k=Math.min(ringCutPrev.width/w, ringCutPrev.height/h); const dw=w*k, dh=h*k; const x=(ringCutPrev.width-dw)/2, y=(ringCutPrev.height-dh)/2; ctx.drawImage(img,x,y,dw,dh); }; img.crossOrigin='anonymous'; img.src=url; }
+
+/* ======== PWA ======== */
+const btnInstall=document.getElementById('btnInstall'); let deferredPrompt=null;
+addEventListener('beforeinstallprompt',function(e){e.preventDefault();deferredPrompt=e;btnInstall.disabled=false;});
+btnInstall.onclick=async function(){if(!deferredPrompt)return;deferredPrompt.prompt();deferredPrompt=null;btnInstall.disabled=true;};
+
+/* ======== Утилиты ======== */
+function hex2rgba(hex, alpha){ const v=hex.replace('#',''); const r=parseInt(v.slice(0,2),16), g=parseInt(v.slice(2,4),16), b=parseInt(v.slice(4,6),16); return 'rgba('+r+','+g+','+b+','+alpha+')'; }
+
+/* ======== Само-проверки (простые тесты) ======== */
+(function runSanityTests(){
+  try{
+    // Тест removeBgOnClient возвращает объект с полями url,w,h
+    const c=document.createElement('canvas'); c.width=8; c.height=8; const ctx=c.getContext('2d'); ctx.fillStyle='#ffffff'; ctx.fillRect(0,0,8,8);
+    const im=new Image(); im.onload=function(){
+      const res=removeBgOnClient(im,8,8,{r:255,g:255,b:255},50,10,false);
+      const ok = res && typeof res.url==='string' && typeof res.w==='number' && typeof res.h==='number';
+      console.log('[TEST] removeBgOnClient:', ok?'OK':'FAIL', res);
+      if(!ok) showHint('Тест removeBgOnClient не прошёл');
     };
-    const FINGER_TIPS = [4,8,12,16,20];
-    const MAX_CONFETTI=80, MAX_SPARKLES=40, MAX_STARS=30;
+    im.src=c.toDataURL('image/png');
 
-    const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
-    const hexToRgb = hex => { const c=hex.replace('#',''); const n=parseInt(c,16); return {r:(n>>16)&255,g:(n>>8)&255,b:n&255}; };
-    const rr=(a,b)=>a+Math.random()*(b-a);
+    // Тест спавна частиц эффектов
+    const n0=fxParticles.length; fxSpawn('poop'); fxUpdate(0.016); const ok2=fxParticles.length>n0; console.log('[TEST] FX spawn:', ok2?'OK':'FAIL');
 
-    function updateLabels(){
-      currentEffectLabel.textContent = effectSelect.selectedOptions[0].textContent;
-      currentPrimaryLabel.textContent = config.primaryColor;
-      currentAccentLabel.textContent = config.accentColor;
-      currentIntensityLabel.textContent = config.intensity.toFixed(1);
-    }
-    function initSparkles(){ config.sparkles = Array.from({length:MAX_SPARKLES},()=>({xOff:rr(-10,10),yOff:rr(-10,10),vx:rr(-0.1,0.1),vy:rr(-0.1,0.1),life:Math.random(),maxLife:rr(0.7,1.5),size:rr(3,7)})); }
-    function initConfetti(){ config.confettis = Array.from({length:MAX_CONFETTI},()=>({x:rr(-15,15),y:rr(-15,15),vx:rr(-0.2,0.2),vy:rr(0.5,1.5),rotation:Math.random()*Math.PI*2,size:rr(4,8),color:`hsl(${Math.random()*360},70%,70%)`,life:rr(0,1),maxLife:rr(1.5,3)})); }
-    function initStars(){ config.stars = Array.from({length:MAX_STARS},()=>({angle:Math.random()*Math.PI*2,radius:rr(10,25),speed:rr(0.5,1.5),size:rr(3,6),phase:Math.random()*Math.PI*2})); }
-    function triggerLightning(){ config.lightningActive=true; config.lightningTimer=0.15; }
+    // Тест omitKeys — не должен копировать _img
+    const tObj={a:1,_img:42,b:2}; const tOut=omitKeys(tObj,['_img']); console.log('[TEST] omitKeys:', (!('_img' in tOut) && tOut.a===1 && tOut.b===2)?'OK':'FAIL');
+  }catch(e){ console.warn('Self-tests error', e); }
+})();
 
-    function dist(a,b){ return Math.hypot(a.x-b.x,a.y-b.y); }
-    function isExt(lm,mcp,pip,dip,tip){ const m=lm[mcp], p=lm[pip], t=lm[tip]; return dist(t,p) > dist(p,m); }
-    function classifyGesture(lm){
-      const i=isExt(lm,5,6,7,8), m=isExt(lm,9,10,11,12), r=isExt(lm,13,14,15,16), p=isExt(lm,17,18,19,20);
-      const tt=lm[4], ti=lm[3], w=lm[0]; const th=dist(tt,w) > dist(ti,w)*1.2;
-      if(!i&&!m&&!r&&!p&&!th) return {name:'Кулак',score:1};
-      if(i&&m&&r&&p&&th) return {name:'Открытая',score:1};
-      if(th&&!i&&!m&&!r&&!p) return {name:'Палец вверх',score:1};
-      if(i&&m&&!r&&!p) return {name:'V',score:1};
-      if(i&&!m&&!r&&!p) return {name:'Указание',score:1};
-      return {name:'—',score:0};
-    }
-
-    function drawAtTip(x,y){
-      const t = performance.now()/1000, intensity=config.intensity;
-
-      if(config.effect==='glow'&&showEffects){
-        const base=20*intensity, radius=base+Math.sin(t*3)*6, pc=hexToRgb(config.primaryColor);
-        const g=ctx.createRadialGradient(x,y,radius*0.1,x,y,radius);
-        g.addColorStop(0,`rgba(${pc.r},${pc.g},${pc.b},0.7)`); g.addColorStop(1,'rgba(0,0,0,0)');
-        ctx.fillStyle=g; ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.fill();
-      }
-
-      if(config.effect==='orbit'&&showEffects){
-        const baseR=16*intensity;
-        for(let i=0;i<5;i++){
-          const ph=(i/5)*Math.PI*2+config.rainbowOffset, r=baseR+Math.sin(t*2+ph)*5;
-          const cx=x+Math.cos(t+ph)*r*0.3, cy=y+Math.sin(t+ph)*r*0.3;
-          ctx.fillStyle=config.accentColor; ctx.beginPath(); ctx.arc(cx,cy,5*intensity,0,Math.PI*2); ctx.fill();
-        }
-      }
-
-      if(config.effect==='burst'&&showEffects){
-        const spikes=10, maxR=28*intensity, pulse=Math.abs(Math.sin(t*3));
-        for(let i=0;i<spikes;i++){
-          const th=(i/spikes)*Math.PI*2, len=maxR*(0.6+0.4*pulse);
-          ctx.strokeStyle=config.primaryColor; ctx.lineWidth=2*(0.5+0.5*pulse);
-          ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+Math.cos(th)*len,y+Math.sin(th)*len); ctx.stroke();
-        }
-      }
-
-      if(config.effect==='sparkle'&&showEffects){
-        for(const p of config.sparkles){
-          p.xOff+=p.vx*deltaTimeGlobal*50; p.yOff+=p.vy*deltaTimeGlobal*50; p.life+=deltaTimeGlobal;
-          if(p.life>=p.maxLife){ p.xOff=rr(-10,10); p.yOff=rr(-10,10); p.vx=rr(-0.1,0.1); p.vy=rr(-0.1,0.1); p.life=0; p.maxLife=rr(0.7,1.5); p.size=rr(3,7); }
-          const alpha=1-(p.life/p.maxLife), px=x+p.xOff, py=y+p.yOff, size=p.size*alpha*intensity;
-          ctx.save(); ctx.translate(px,py); ctx.rotate(t+p.life); ctx.fillStyle=`rgba(255,255,255,${alpha})`;
-          ctx.beginPath(); const spikes=4, outer=size, inner=size*0.5;
-          for(let i=0;i<spikes;i++){ const th=(Math.PI*2/5)*i-Math.PI/2; ctx.lineTo(Math.cos(th)*outer,Math.sin(th)*outer); const th2=th+Math.PI/5; ctx.lineTo(Math.cos(th2)*inner,Math.sin(th2)*inner); }
-          ctx.closePath(); ctx.fill(); ctx.restore();
-        }
-      }
-
-      if(config.effect==='fire'&&showEffects){
-        for(const p of config.confettis){
-          p.y += -Math.abs(p.vy)*deltaTimeGlobal*30*intensity; p.x += p.vx*deltaTimeGlobal*30*intensity; p.life+=deltaTimeGlobal;
-          if(p.life>=p.maxLife){ p.x=rr(-10,10); p.y=rr(0,20); p.life=0; p.maxLife=rr(0.6,1.2); p.size=rr(6,12); }
-          const prog=p.life/p.maxLife, alpha=1-prog, size=p.size*(1-prog*0.5)*intensity, fx=x+p.x, fy=y+p.y;
-          const g=ctx.createRadialGradient(fx,fy,size*0.2,fx,fy,size);
-          g.addColorStop(0,`rgba(255,255,180,${alpha})`); g.addColorStop(0.4,`rgba(255,160,60,${alpha*0.8})`); g.addColorStop(1,`rgba(100,40,10,0)`);
-          ctx.fillStyle=g; ctx.beginPath(); ctx.arc(fx,fy,size,0,Math.PI*2); ctx.fill();
-        }
-      }
-
-      if(config.effect==='lightning'&&showEffects){
-        if(!config.lightningActive && Math.random()<0.009*config.intensity) triggerLightning();
-        if(config.lightningActive){
-          const lifeFrac=config.lightningTimer/0.15, alpha=lifeFrac;
-          ctx.save(); ctx.lineWidth=2+2*(1-lifeFrac); ctx.strokeStyle=`rgba(180,220,255,${alpha})`; ctx.shadowColor=`rgba(180,220,255,${alpha})`; ctx.shadowBlur=8*lifeFrac;
-          const len=30*intensity, seg=5; ctx.beginPath(); ctx.moveTo(x,y);
-          for(let i=1;i<=seg;i++){ const tseg=i/seg, nx=x+Math.cos(tseg*Math.PI*2+config.rainbowOffset)*(len*(1-tseg*0.3))+rr(-5,5), ny=y+Math.sin(tseg*Math.PI*2+config.rainbowOffset)*(len*(1-tseg*0.3))+rr(-5,5); ctx.lineTo(nx,ny); }
-          ctx.stroke(); ctx.restore();
-        }
-      }
-
-      if(config.effect==='rainbow'&&showEffects){
-        const radius=20*intensity, segments=60;
-        for(let i=0;i<segments;i++){
-          const a=(i/segments)*Math.PI*2+config.rainbowOffset, a2=((i+1)/segments)*Math.PI*2+config.rainbowOffset, h1=(i*6+t*60)%360, h2=((i+1)*6+t*60)%360;
-          const grad=ctx.createLinearGradient(x+Math.cos(a)*radius,y+Math.sin(a)*radius,x+Math.cos(a2)*radius,y+Math.sin(a2)*radius);
-          grad.addColorStop(0,`hsl(${h1},80%,65%)`); grad.addColorStop(1,`hsl(${h2},80%,65%)`);
-          ctx.strokeStyle=grad; ctx.lineWidth=6*intensity; ctx.beginPath(); ctx.arc(x,y,radius,a,a2); ctx.stroke();
-        }
-      }
-
-      if(config.effect==='confetti'&&showEffects){
-        for(const p of config.confettis){
-          p.y+=p.vy*deltaTimeGlobal*30*intensity; p.x+=p.vx*deltaTimeGlobal*30*intensity; p.rotation+=0.05*deltaTimeGlobal*60; p.life+=deltaTimeGlobal;
-          if(p.life>=p.maxLife){ p.x=rr(-15,15); p.y=rr(-15,15); p.vx=rr(-0.2,0.2); p.vy=rr(0.5,1.5); p.rotation=Math.random()*Math.PI*2; p.life=0; p.maxLife=rr(1.5,3); p.size=rr(4,8); }
-          const alpha=1-(p.life/p.maxLife); ctx.save(); ctx.translate(x+p.x,y+p.y); ctx.rotate(p.rotation); ctx.fillStyle=p.color; ctx.globalAlpha=alpha; ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size); ctx.restore();
-        }
-      }
-
-      if(config.effect==='pulse'&&showEffects){
-        const base=15*intensity, pulse=Math.abs(Math.sin(t*2+config.pulsePhase)), radius=base+pulse*12;
-        ctx.strokeStyle=config.accentColor; ctx.lineWidth=3*pulse; ctx.beginPath(); ctx.arc(x,y,radius,0,Math.PI*2); ctx.stroke();
-      }
-
-      if(config.effect==='stars'&&showEffects){
-        for(const s of config.stars){
-          s.angle+=s.speed*deltaTimeGlobal*0.5;
-          const r=s.radius*(0.8+0.2*Math.sin(t+s.phase)), sx=x+Math.cos(s.angle+config.pulsePhase)*r, sy=y+Math.sin(s.angle+config.pulsePhase)*r, size=s.size*(1+0.3*Math.sin(t+s.phase));
-          ctx.save(); ctx.translate(sx,sy); ctx.rotate(t+s.phase); ctx.fillStyle=config.accentColor; ctx.beginPath();
-          for(let i=0;i<5;i++){ const th=(Math.PI*2/5)*i-Math.PI/2, outer=size, inner=size*0.5; if(i===0) ctx.moveTo(Math.cos(th)*outer,Math.sin(th)*outer); else ctx.lineTo(Math.cos(th)*outer,Math.sin(th)*outer); const th2=th+Math.PI/5; ctx.lineTo(Math.cos(th2)*inner,Math.sin(th2)*inner); }
-          ctx.closePath(); ctx.fill(); ctx.restore();
-        }
-      }
-
-      if(config.lightningActive){ config.lightningTimer-=deltaTimeGlobal; if(config.lightningTimer<=0){ config.lightningActive=false; config.lightningTimer=0; } }
-      config.rainbowOffset+=deltaTimeGlobal*0.8; config.pulsePhase+=deltaTimeGlobal*1.2;
-    }
-
-    /*** ===== MediaPipe Hands with PRELOAD & PROGRESS ===== ***/
-    const MP_BASE = 'https://cdn.jsdelivr.net/npm/@mediapipe/hands/';
-    // Имена ассетов — проверь по Network при необходимости
-    const ASSETS = [
-      'hands_solution_packed_assets.data',
-      'hands_solution_packed_assets_loader.js',
-      'hands_solution_simd_wasm_bin.wasm',
-      'hands_solution_simd_wasm.js'
-    ];
-
-    async function prefetchAssetsEqualSlices(){
-      setProgress(8,'Подготовка','Проверка ассетов');
-      const blobs = {};
-      let doneFiles = 0;
-      const totalSlice = 70;  // 8%..78% за файлы (по ~равным долям)
-      const perFile = totalSlice / ASSETS.length;
-
-      for(const name of ASSETS){
-        try{
-          setProgress(10 + doneFiles*perFile, 'Загрузка модели', 'Получение '+name);
-          const res = await fetch(MP_BASE + name, { cache:'force-cache' });
-          if(!res.ok) throw new Error(name+' HTTP '+res.status);
-          const reader = res.body && res.body.getReader ? res.body.getReader() : null;
-          const chunks = [];
-          if(reader){
-            for(;;){
-              const {done, value} = await reader.read();
-              if(done) break;
-              chunks.push(value);
-            }
-          }else{
-            chunks.push(new Uint8Array(await res.arrayBuffer()));
-          }
-          blobs[name] = URL.createObjectURL(new Blob(chunks));
-          doneFiles++;
-          setProgress(10 + doneFiles*perFile, 'Загрузка модели', `${doneFiles}/${ASSETS.length} файлов`);
-        }catch(e){
-          showError('Не удалось загрузить '+name+': '+e.message);
-          // Фолбэк — позволим hands.js подтянуть оставшееся с CDN
-        }
-      }
-
-      setProgress(82,'Инициализация MediaPipe','Создание Hands');
-      const locateFile = (file) => blobs[file] || (MP_BASE + file);
-      return locateFile;
-    }
-
-    let hands = null;
-    let firstResult = false;
-
-    function onResults(results){
-      ctx.save();
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      ctx.drawImage(results.image,0,0,canvas.width,canvas.height);
-
-      if(results.multiHandLandmarks && results.multiHandLandmarks.length){
-        const lm = results.multiHandLandmarks[0];
-        if(showLines){
-          drawConnectors(ctx, lm, HAND_CONNECTIONS, {color:'#7ae0ff', lineWidth:3});
-          drawLandmarks(ctx, lm, {color:'#ffffff', radius:4});
-        }
-        const g = classifyGesture(lm);
-        gestureNameEl.textContent = g.name;
-        confidenceEl.textContent = `${Math.round(g.score*100)}%`;
-
-        for(const i of FINGER_TIPS){
-          const tip = lm[i]; if(!tip) continue;
-          const x = tip.x * canvas.width, y = tip.y * canvas.height;
-          if(showEffects) drawAtTip(x,y);
-        }
-      }else{
-        gestureNameEl.textContent = '—';
-        confidenceEl.textContent = '';
-      }
-      ctx.restore();
-
-      if(!firstResult){
-        firstResult = true;
-        setProgress(100, 'Готово','Модель и камера активны');
-      }
-    }
-
-    async function buildHands(){
-      const locateFile = await prefetchAssetsEqualSlices();
-      hands = new Hands({ locateFile });
-      hands.setOptions({ maxNumHands:1, modelComplexity:1, minDetectionConfidence:0.7, minTrackingConfidence:0.6 });
-      hands.onResults(onResults);
-    }
-
-    /*** ===== Camera ===== ***/
-    async function startCamera(){
-      if(currentStream){ currentStream.getTracks().forEach(t=>t.stop()); currentStream=null; }
-      try{
-        setProgress(85,'Камера','Запрос доступа');
-        const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode }, audio:false });
-        currentStream = stream;
-        video.srcObject = stream;
-        await video.play();
-        if (video.readyState >= 2) resizeCanvas();
-        else video.onloadedmetadata = resizeCanvas;
-        setProgress(90,'Камера','Поток запущен');
-        requestAnimationFrame(loop);
-      }catch(e){
-        showError('Камера недоступна: '+e.message);
-      }
-    }
-
-    function resizeCanvas(){
-      if(video.videoWidth && video.videoHeight){
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-      }
-    }
-
-    async function loop(){
-      const now = performance.now();
-      deltaTimeGlobal = (now - lastTime)/1000;
-      lastTime = now;
-      if(video.readyState >= 2 && hands){
-        await hands.send({ image: video });
-      }
-      requestAnimationFrame(loop);
-    }
-
-    /*** ===== UI EVENTS ===== ***/
-    effectSelect.addEventListener('change', ()=>{ config.effect = effectSelect.value==='random'? randomEffect():effectSelect.value; updateLabels(); });
-    primaryColorInput.addEventListener('input', ()=>{ config.primaryColor = primaryColorInput.value; updateLabels(); });
-    accentColorInput.addEventListener('input', ()=>{ config.accentColor = accentColorInput.value; updateLabels(); });
-    intensityInput.addEventListener('input', ()=>{ config.intensity = parseFloat(intensityInput.value); updateLabels(); });
-    newDesignBtn.addEventListener('click', ()=>{ config.effect = effectSelect.value==='random'? randomEffect():effectSelect.value; config.primaryColor = primaryColorInput.value; config.accentColor = accentColorInput.value; config.intensity = parseFloat(intensityInput.value); initSparkles(); initConfetti(); initStars(); updateLabels(); });
-    switchCamBtn.addEventListener('click', ()=>{ facingMode = (facingMode==='user') ? 'environment' : 'user'; startCamera(); });
-    restartCamBtn.addEventListener('click', ()=> startCamera());
-    toggleLinesCheckbox.addEventListener('change', e=> showLines = e.target.checked);
-    toggleEffectsCheckbox.addEventListener('change', e=> showEffects = e.target.checked);
-
-    snapshotBtn.addEventListener('click', ()=>{
-      const a = document.createElement('a');
-      a.download = `manicure_effect_${Date.now()}.png`;
-      a.href = canvas.toDataURL('image/png');
-      a.click();
-      const div = document.createElement('div');
-      div.innerHTML = `📸 <a href="${a.href}" download="${a.download}">Скачать снимок</a>`;
-      downloads.prepend(div);
-    });
-
-    recordBtn.addEventListener('click', ()=>{
-      if(recorder) return;
-      const stream = canvas.captureStream(30);
-      try{ recorder = new MediaRecorder(stream, {mimeType:'video/webm;codecs=vp9'}); }catch{ recorder = new MediaRecorder(stream); }
-      chunks = [];
-      recorder.ondataavailable = e=>{ if(e.data.size) chunks.push(e.data); };
-      recorder.onstop = ()=>{
-        const blob = new Blob(chunks, {type:'video/webm'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `manicure_effect_video_${Date.now()}.webm`; a.textContent = '🎬 Скачать видео';
-        const div = document.createElement('div'); div.appendChild(a); downloads.prepend(div);
-        recorder=null; stopBtn.disabled=true; recordBtn.disabled=false;
-      };
-      recorder.start(); recordBtn.disabled=true; stopBtn.disabled=false;
-    });
-    stopBtn.addEventListener('click', ()=>{ if(recorder) recorder.stop(); });
-
-    function randomEffect(){ const o=['glow','sparkle','orbit','burst','fire','lightning','rainbow','confetti','pulse','stars']; return o[Math.floor(Math.random()*o.length)]; }
-
-    /*** ===== INIT ===== ***/
-    (async function init(){
-      try{
-        setProgress(3,'Инициализация','Старт');
-        config.effect='glow'; initSparkles(); initConfetti(); initStars(); updateLabels();
-        await buildHands();                // 8%..82%
-        await startCamera();               // 85%..90%
-        setProgress(95,'Ожидание первого кадра','MediaPipe обрабатывает…');
-      }catch(e){
-        showError(e.message || e);
-      }
-    })();
-  </script>
-</body>
+/* ======== Финальные подсказки ======== */
+showHint('Дважды тапни по экрану — спрятать/показать панель');
+  </script></body>
 </html>
